@@ -1,0 +1,187 @@
+{% extends 'base.html' %}
+{% block title %}{{ meeting.title }} · MMP management{% endblock %}
+{% block body_class %}meeting-page{% endblock %}
+{% block content %}
+<div class="meeting-live-root" data-meeting-id="{{ meeting.pk }}" data-csrf-token="{{ csrf_token }}" data-live-updates-url="{% url 'meeting_live_updates' meeting.pk %}" data-live-version="{{ meeting.updated_at|date:'c' }}" data-live-enabled="{% if meeting.status == 'draft' %}true{% else %}false{% endif %}">
+  <header class="page-header meeting-header">
+    <div>
+      <p class="eyebrow">MEETING MINUTES / {{ meeting.meeting_date|date:'d M Y'|upper }}</p>
+      <div class="title-line"><h1>{{ meeting.title }}</h1><span class="status {{ meeting.status }}">{{ meeting.get_status_display }}</span></div>
+      <p>Host: {{ meeting.host }} · Minute Writer: {{ meeting.minute_taker }}{% if meeting.writer_rotation %} · Writer Rotation: {{ meeting.writer_rotation }} ({{ meeting.get_writer_assignment_display }}){% endif %} · Created by {{ meeting.created_by }}</p>
+      {% if can_review or is_minute_writer %}
+        <div class="meeting-role-row">
+          {% if can_review %}<span class="meeting-role host-role">Host</span>{% endif %}
+          {% if is_minute_writer %}<span class="meeting-role taker-role">Minute Writer</span>{% endif %}
+        </div>
+      {% endif %}
+    </div>
+    <div class="header-actions no-print">
+      <a class="button secondary" href="{% url 'meeting_export_pdf' meeting.pk %}">Export PDF</a>
+      <button class="button secondary" onclick="window.print()">Print</button>
+      {% if can_manage and meeting.status == 'draft' %}<a class="button secondary" href="{% url 'meeting_edit' meeting.pk %}">Edit Details</a>{% endif %}
+      {% if can_review %}
+        <form method="post" action="{% url 'meeting_finalize' meeting.pk %}" data-confirm="Finalize this Meeting Minute? It will become read-only." data-preserve-scroll>{% csrf_token %}<button class="button primary">Finalize</button></form>
+      {% elif can_manage and meeting.status == 'finalized' %}
+        <form method="post" action="{% url 'meeting_reopen' meeting.pk %}" data-confirm="Reopen this Meeting Minute for editing?" data-preserve-scroll>{% csrf_token %}<button class="button secondary">Reopen</button></form>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="meeting-progress no-print">
+    <div><strong data-reviewed-count aria-live="polite">{{ reviewed }} / {{ entries|length }} tasks reviewed</strong></div>
+    <div class="progress-track" role="progressbar" aria-label="Tasks reviewed" aria-valuemin="0" aria-valuenow="{{ reviewed }}" aria-valuemax="{{ entries|length }}"><i data-reviewed-progress style="width:{% widthratio reviewed entries|length 100 %}%"></i></div>
+    {% if can_review %}
+      <form method="post" action="{% url 'meeting_order' meeting.pk %}" class="order-form" data-meeting-order>
+        {% csrf_token %}
+        <label>Order Tasks By
+          <select name="order_by" data-order-select>
+            <option value="manual" {% if meeting.task_order == 'manual' %}selected{% endif %}>Manual</option>
+            <option value="previous" {% if meeting.task_order == 'previous' %}selected{% endif %}>Previous Meeting</option>
+            <option value="scope" {% if meeting.task_order == 'scope' %}selected{% endif %}>Scope</option>
+            <option value="assignee" {% if meeting.task_order == 'assignee' %}selected{% endif %}>Assignee</option>
+          </select>
+        </label>
+        <button type="submit" class="button secondary small-button">Apply</button>
+      </form>
+    {% endif %}
+  </div>
+
+  <div class="meeting-layout">
+    <aside class="meeting-nav no-print">
+      <strong>REVIEW ORDER</strong>
+      <nav>{% for entry in entries %}<a href="#task-{{ entry.pk }}" data-nav-entry-id="{{ entry.pk }}" class="{{ entry.review_state }}"><span>{{ entry.position }}</span><div>{{ entry.display_snapshot.title|default:entry.task.title }}<small>{{ entry.display_snapshot.scope|default:entry.task.scope_label }}</small></div></a>{% endfor %}</nav>
+    </aside>
+
+    <button type="button" class="meeting-pane-resizer no-print" data-meeting-pane-resizer role="separator" aria-label="Resize Review Order" aria-orientation="vertical" title="Drag to resize Review Order"></button>
+
+    <section class="meeting-tasks">
+      {% for entry in entries %}
+        <article class="meeting-task panel" id="task-{{ entry.pk }}" data-entry-id="{{ entry.pk }}" data-live-version="{{ entry.updated_at|date:'c' }}">
+          <div class="task-sequence no-print">
+            <strong class="task-sequence-title">{{ entry.display_snapshot.title|default:entry.task.title }}</strong>
+            {% if can_review %}
+              <div>
+                <form method="post" action="{% url 'meeting_task_move' meeting.pk entry.pk %}" data-meeting-move>{% csrf_token %}<input type="hidden" name="direction" value="up"><button aria-label="Move up">↑</button></form>
+                <form method="post" action="{% url 'meeting_task_move' meeting.pk entry.pk %}" data-meeting-move>{% csrf_token %}<input type="hidden" name="direction" value="down"><button aria-label="Move down">↓</button></form>
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="meeting-task-head">
+            <div class="task-info-grid">
+              <div class="task-info-item"><small>Scopes</small><div class="tag-row">{% if entry.display_snapshot.scopes %}{% for scope in entry.display_snapshot.scopes %}<span class="tag"><i style="background:{{ scope.color }}"></i>{{ scope.name }}</span>{% endfor %}{% elif entry.display_snapshot.scope %}<span class="tag"><i style="background:{{ entry.display_snapshot.scope_color|default:'#777' }}"></i>{{ entry.display_snapshot.scope }}</span>{% else %}{% for scope in entry.task.scope_list %}<span class="tag"><i style="background:{{ scope.color }}"></i>{{ scope.name }}</span>{% empty %}<span class="muted">—</span>{% endfor %}{% endif %}</div></div>
+              <div class="task-info-item"><small>Assignee</small><strong>{{ entry.display_snapshot.assignee|default:entry.task.assignee|default:'Unassigned' }}</strong></div>
+              <div class="task-info-item"><small>Status</small><span class="status {{ entry.display_snapshot.status_key|default:'inactive' }}">{{ entry.display_snapshot.status|default:entry.task.get_status_display }}</span></div>
+              <div class="task-info-item"><small>Due Date</small><strong>{% if entry.display_snapshot.due_date_label %}{{ entry.display_snapshot.due_date_label }}{% elif entry.task.due_date %}{{ entry.task.due_date|date:'d M Y' }}{% else %}—{% endif %}</strong></div>
+              <div class="task-info-item"><small>Boards</small><strong>{% if entry.display_snapshot.boards %}{{ entry.display_snapshot.boards|join:', ' }}{% else %}No boards{% endif %}</strong></div>
+              </div>
+            {% if entry.display_snapshot.link_url %}<a class="external-link no-print" href="{{ entry.display_snapshot.link_url }}" target="_blank" rel="noopener">Open Link ↗</a>{% elif entry.display_snapshot.redmine_url %}<a class="external-link no-print" href="{{ entry.display_snapshot.redmine_url }}" target="_blank" rel="noopener">Open Link ↗</a>{% endif %}
+          </div>
+
+          <div class="minute-section">
+            <div class="section-label"><strong>Previous Action Items</strong></div>
+            <div class="action-checklist previous-action-list" data-open-actions>
+              {% for item in entry.open_actions %}
+                <div class="action-row previous-action-row" data-action-id="{{ item.pk }}" data-created-at="{{ item.created_at|date:'c' }}">
+                  {% if meeting.status == 'draft' and item.can_toggle %}<form method="post" action="{% url 'action_item_toggle' item.pk %}" data-action-toggle>{% csrf_token %}<input type="hidden" name="next" value="{% url 'meeting_detail' meeting.pk %}#task-{{ entry.pk }}"><button type="submit" class="round-check no-print" aria-label="Complete action item" title="Mark as completed"></button></form>{% else %}<span class="round-check" aria-hidden="true"></span>{% endif %}
+                  <span class="action-item-content">{{ item.content }}</span>
+                  <small class="action-item-meta">{{ item.assignee|default:'Unassigned' }}{% if item.due_date %} · Due {{ item.due_date|date:'d M' }}{% endif %}</small>
+                </div>
+              {% empty %}<p class="muted" data-open-actions-empty>No open action items.</p>{% endfor %}
+            </div>
+              <details class="completed-actions" data-completed-actions {% if not entry.recent_completed_actions %}hidden{% endif %}>
+                <summary><span data-completed-count>{{ entry.recent_completed_actions|length }}</span> recently completed</summary>
+                <div data-completed-action-list>
+                {% for item in entry.recent_completed_actions %}
+                  <div class="action-row recently-completed-row" data-action-id="{{ item.pk }}" data-created-at="{{ item.created_at|date:'c' }}">
+                    {% if meeting.status == 'draft' and item.can_toggle %}<form method="post" action="{% url 'action_item_toggle' item.pk %}" data-action-toggle>
+                      {% csrf_token %}
+                      <input type="hidden" name="next" value="{% url 'meeting_detail' meeting.pk %}#task-{{ entry.pk }}">
+                      <button type="submit" class="round-check checked no-print" aria-label="Reopen action item" title="Reopen action item">✓</button>
+                    </form>{% else %}<span class="round-check checked" aria-hidden="true">✓</span>{% endif %}
+                    <span class="action-item-content">{{ item.content }}</span>
+                    <small class="action-item-meta">{{ item.completed_by }} · {{ item.completed_at|date:'d M' }}</small>
+                  </div>
+                {% endfor %}
+                </div>
+              </details>
+          </div>
+
+          <div class="minute-section progress-section">
+            <div class="section-label section-label-with-status">
+              <div><strong>Progress</strong></div>
+              {% if can_record %}<span class="autosave-status is-saved" data-autosave-status role="status" aria-live="polite">Saved</span>{% else %}<span class="live-update-meta" data-live-meta>{% if entry.updated_by %}Updated by {{ entry.updated_by }}{% endif %}</span>{% endif %}
+            </div>
+            {% if can_record %}
+              <form class="progress-autosave" data-progress-autosave data-save-url="{% url 'meeting_task_progress_save' meeting.pk entry.pk %}">
+                {% csrf_token %}
+                <textarea name="weekly_progress" rows="5" placeholder="Capture progress, decisions and key context..." aria-label="Weekly progress for {{ entry.display_snapshot.title|default:entry.task.title }}">{{ entry.weekly_progress }}</textarea>
+              </form>
+            {% else %}
+              <div class="progress-copy" data-live-progress>{% if entry.weekly_progress %}{{ entry.weekly_progress|linebreaksbr }}{% else %}No progress update recorded.{% endif %}</div>
+            {% endif %}
+          </div>
+
+          <div class="minute-section">
+            <div class="section-label"><strong>New Action Items</strong></div>
+            <div class="action-checklist live-action-list" data-live-actions data-can-edit-actions="{{ can_record|yesno:'true,false' }}">
+              {% for item in entry.new_actions %}
+                <div class="action-row editable-action-row" data-action-id="{{ item.pk }}" data-edit-url="{% url 'meeting_action_update' meeting.pk item.pk %}" data-delete-url="{% url 'meeting_action_delete' meeting.pk item.pk %}">
+                  <span class="round-check {% if item.is_completed %}checked{% endif %}">{% if item.is_completed %}✓{% endif %}</span>
+                  <span class="action-item-content">{{ item.content }}</span>
+                  <small class="action-item-meta">{{ item.assignee|default:'Unassigned' }}{% if item.due_date %} · Due {{ item.due_date|date:'d M' }}{% endif %}</small>
+                  {% if can_record and not item.is_published %}
+                    <div class="action-row-actions no-print">
+                      <button type="button" data-action-edit>Edit</button>
+                      <button type="button" class="text-danger" data-action-delete>Delete</button>
+                    </div>
+                    <form class="inline-action-edit no-print" data-action-edit-form hidden>
+                      {% csrf_token %}
+                      <input name="content" maxlength="300" value="{{ item.content }}" required aria-label="Action item content">
+                      <select name="assignee" aria-label="Action item assignee">
+                        <option value="">Unassigned</option>
+                        {% for member in active_users %}<option value="{{ member.pk }}" {% if item.assignee_id == member.pk %}selected{% endif %}>{{ member.display_name }}</option>{% endfor %}
+                      </select>
+                      <input type="date" name="due_date" value="{{ item.due_date|date:'Y-m-d' }}" aria-label="Action item due date">
+                      <button class="button primary mini" type="submit">Save</button>
+                      <button class="button secondary mini" type="button" data-action-cancel>Cancel</button>
+                      <span class="inline-action-status" data-action-edit-status role="status" aria-live="polite"></span>
+                    </form>
+                  {% endif %}
+                </div>
+              {% empty %}<p class="muted">No new action items yet.</p>{% endfor %}
+            </div>
+            {% if can_record %}
+              <form class="action-item-autosave-form" data-action-item-form data-add-url="{% url 'meeting_action_add' meeting.pk entry.pk %}">
+                {% csrf_token %}
+                <div class="new-action-grid">
+                  <input name="new_action_item" maxlength="300" placeholder="What needs to happen next?" aria-label="New action item" required>
+                  <select name="action_assignee" aria-label="Action item assignee"><option value="">Task assignee</option>{% for member in active_users %}<option value="{{ member.pk }}">{{ member.display_name }}</option>{% endfor %}</select>
+                  <input type="date" name="action_due_date" aria-label="Action item due date">
+                  <button class="button primary" type="submit">+ Add</button>
+                </div>
+                <span class="action-save-status" data-action-status role="status" aria-live="polite">Press Enter or click Add.</span>
+              </form>
+            {% endif %}
+          </div>
+
+          {% if can_review %}
+            <form method="post" action="{% url 'meeting_task_review' meeting.pk entry.pk %}" class="host-review-controls" data-meeting-review>
+              {% csrf_token %}
+              <div><strong class="review-control-label">Review result</strong><div class="review-choice-buttons" role="group" aria-label="Review result">
+                <button type="submit" name="review_state" value="pending" class="review-choice pending {% if entry.review_state == 'pending' %}active{% endif %}" aria-pressed="{% if entry.review_state == 'pending' %}true{% else %}false{% endif %}">Pending</button>
+                <button type="submit" name="review_state" value="reviewed" class="review-choice reviewed {% if entry.review_state == 'reviewed' %}active{% endif %}" aria-pressed="{% if entry.review_state == 'reviewed' %}true{% else %}false{% endif %}">Reviewed</button>
+                <button type="submit" name="review_state" value="no_update" class="review-choice no_update {% if entry.review_state == 'no_update' %}active{% endif %}" aria-pressed="{% if entry.review_state == 'no_update' %}true{% else %}false{% endif %}">No Update</button>
+                <button type="submit" name="review_state" value="skipped" class="review-choice skipped {% if entry.review_state == 'skipped' %}active{% endif %}" aria-pressed="{% if entry.review_state == 'skipped' %}true{% else %}false{% endif %}">Skipped</button>
+              </div></div>
+              <span class="review-save-status" data-review-save-status role="status" aria-live="polite"></span>
+            </form>
+          {% else %}
+            <p class="review-result">Review result: <strong data-live-review-result>{{ entry.get_review_state_display }}</strong></p>
+          {% endif %}
+        </article>
+      {% empty %}<div class="panel empty">No active tasks were available when this Meeting Minute was created.</div>{% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

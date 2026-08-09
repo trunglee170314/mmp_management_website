@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Scope Management - MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">SETTINGS / TASKS</p>
+    <h1>Scope Management</h1>
+    <p>Define the primary categories used for workload analysis.</p>
+  </div>
+</header>
+<section class="split-layout">
+  <article class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Configured Scopes</h2>
+        <p>Edit scopes here. Scopes already used by tasks can be archived, but not deleted.</p>
+      </div>
+    </div>
+    <div class="simple-list scope-list">
+      {% for scope in scopes %}
+        <div class="scope-list-row">
+          <span class="scope-swatch" style="background:{{ scope.color }}"></span>
+          <div class="scope-list-copy">
+            <strong>{{ scope.name }}</strong>
+            <small>{{ scope.description|default:'No description' }} - {{ scope.task_count }} task{{ scope.task_count|pluralize }}</small>
+          </div>
+          <span class="status {% if scope.is_active %}active{% else %}inactive{% endif %}">{% if scope.is_active %}Active{% else %}Archived{% endif %}</span>
+          <div class="row-actions scope-actions">
+            <a href="{% url 'scope_edit' scope.pk %}">Edit</a>
+            {% if scope.task_count %}
+              <button type="button" class="scope-delete-disabled" title="This scope is being used by tasks" disabled>Delete</button>
+            {% else %}
+              <form method="post" action="{% url 'scope_delete' scope.pk %}" data-confirm="Delete scope {{ scope.name }}?">
+                {% csrf_token %}
+                <button class="text-danger">Delete</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div class="empty">No scopes yet.</div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="panel form-side">
+    <div class="panel-head">
+      <div>
+        <h2>Add Scope</h2>
+        <p>Available immediately in Task forms.</p>
+      </div>
+    </div>
+    <form method="post" class="stack-form">
+      {% csrf_token %}
+      {{ form.as_p }}
+      <button class="button primary wide">Add Scope</button>
+    </form>
+  </article>
+</section>
+{% endblock %}

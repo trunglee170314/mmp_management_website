@@ -1,0 +1,95 @@
+.round-check,
+.meeting-page .round-check {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid #aebdb4;
+  border-radius: 50%;
+  background: #fff;
+  color: transparent;
+  font-size: 0;
+  line-height: 1;
+  box-shadow: 0 0 0 3px rgba(0, 92, 61, 0);
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+button.round-check {
+  cursor: pointer;
+}
+
+button.round-check:hover,
+.meeting-page button.round-check:hover {
+  border-color: #16835e;
+  background: #eef8f3;
+  box-shadow: 0 0 0 3px rgba(22, 131, 94, .12);
+  transform: scale(1.05);
+}
+
+button.round-check:focus-visible {
+  outline: 3px solid rgba(22, 131, 94, .24);
+  outline-offset: 2px;
+}
+
+.round-check.checked,
+.meeting-page .round-check.checked,
+.meeting-page button.round-check.checked:hover {
+  border-color: #087454;
+  background: #16835e;
+  box-shadow: 0 2px 6px rgba(8, 116, 84, .22);
+}
+
+.round-check.checked::after {
+  content: "";
+  width: 8px;
+  height: 4px;
+  margin-top: -2px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+}
+
+button.round-check:disabled {
+  cursor: wait;
+  opacity: .55;
+  transform: none;
+}
+
+.completed-row {
+  opacity: 1;
+}
+
+.completed-row strong,
+.completed-row .action-item-content {
+  color: #7a847e;
+  text-decoration: line-through;
+}
+
+.completed-row small {
+  color: #8a948e;
+}
+
+.action-items-table th:first-child,
+.action-items-table td:first-child {
+  width: 58px;
+  padding-right: 8px;
+  padding-left: 8px;
+  text-align: center;
+}
+
+.action-items-table td:first-child form {
+  display: inline-flex;
+  margin: 0;
+}
+
+[data-action-row] {
+  transition: opacity .17s ease;
+}
+
+[data-action-row].is-removing {
+  pointer-events: none;
+  opacity: 0;
+}

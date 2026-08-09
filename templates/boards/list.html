@@ -1,0 +1,49 @@
+{% extends page_base_template %}
+{% block title %}Boards · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><p class="eyebrow">WORKSPACE / BOARDS</p><h1>Board Management</h1></div>
+  <a class="button primary" href="{% url 'board_add' %}">+ Add Board</a>
+</header>
+<div id="board-workspace" data-partial-root>
+<form class="toolbar wrap board-toolbar task-filter-toolbar" method="get" data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace" data-filter-form data-filter-active="{% if selected_filter_count or query %}true{% else %}false{% endif %}">
+  <label class="search-field"><span aria-hidden="true">⌕</span><input name="q" value="{{ query }}" placeholder="Search boards, barcodes or notes" aria-label="Search boards, barcodes or notes"></label>
+  <details class="multi-filter"><summary>Boards{% if selected_board_filters %} <span>{{ selected_board_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for option in board_options %}<label><input type="checkbox" name="board" value="{{ option.name }}" {% if option.name in selected_board_filters %}checked{% endif %}><span>{{ option.name }} ({{ option.total }})</span></label>{% empty %}<p>No boards available.</p>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Assigned Users{% if selected_assigned_user_filters %} <span>{{ selected_assigned_user_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for member in active_users %}<label><input type="checkbox" name="assigned_user" value="{{ member.pk }}" {% if member.pk|stringformat:'s' in selected_assigned_user_filters %}checked{% endif %}><span>{{ member.display_name }}</span></label>{% empty %}<p>No active users available.</p>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Assignment Status{% if selected_assignment_filters %} <span>{{ selected_assignment_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu"><label><input type="checkbox" name="assignment" value="assigned" {% if 'assigned' in selected_assignment_filters %}checked{% endif %}><span>Assigned</span></label><label><input type="checkbox" name="assignment" value="unassigned" {% if 'unassigned' in selected_assignment_filters %}checked{% endif %}><span>Unassigned</span></label></div></details>
+  <button class="button secondary board-search-button filter-apply-button{% if selected_filter_count or query %} is-filtered{% endif %}" type="submit" data-filter-submit>{% if selected_filter_count or query %}Filtered{% else %}Apply{% endif %}</button>
+</form>
+{% if selected_filter_count or query %}<div class="active-filter-strip"><span>{% if selected_filter_count %}{{ selected_filter_count }} filter{{ selected_filter_count|pluralize }} selected{% endif %}{% if selected_filter_count and query %} · {% endif %}{% if query %}Search: “{{ query }}”{% endif %}</span><a href="{% url 'boards' %}" data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace">Clear All</a></div>{% endif %}
+<section class="panel table-panel">
+  <div class="table-scroll">
+    <table class="board-table">
+      <thead><tr><th>Board</th><th>Barcode</th><th>Assigned Users</th><th>Link</th><th>Notes</th><th>Last Activity</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for board in boards %}
+        <tr>
+          <td><a class="strong-link table-ellipsis" href="{% url 'board_history' board.pk %}" title="{{ board.name }}">{{ board.name }}</a></td>
+          <td><code class="board-barcode" title="{{ board.barcode }}">{{ board.barcode }}</code></td>
+          <td>
+            <div class="assigned-users">
+              {% for member in board.active_user_list %}
+              <span class="user-chip" title="Manual: {{ member.manual_count }} · Tasks: {{ member.task_source_count }}">{{ member.display_name }}{% if member.manual_count %}<form method="post" action="{% url 'board_user_action' board.pk %}" data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace">{% csrf_token %}<input type="hidden" name="user_id" value="{{ member.pk }}"><input type="hidden" name="action" value="remove"><button aria-label="Release manual assignment for {{ member.display_name }}">×</button></form>{% endif %}</span>
+              {% empty %}<span class="muted">Unassigned</span>{% endfor %}
+              <details class="inline-add">
+                <summary>+</summary>
+                <form method="post" action="{% url 'board_user_action' board.pk %}" data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace">{% csrf_token %}<input type="hidden" name="action" value="add"><select name="user_id" aria-label="Select user">{% for member in active_users %}<option value="{{ member.pk }}">{{ member.display_name }}</option>{% endfor %}</select><button class="button mini primary">Assign</button></form>
+              </details>
+            </div>
+          </td>
+          <td><a class="external-link" href="{{ board.link_url }}" target="_blank" rel="noopener">Open Link ↗</a></td>
+          <td class="notes-cell"><span class="table-clamp" title="{{ board.notes }}">{{ board.notes|default:'—' }}</span></td>
+          <td><strong class="activity-text table-clamp" title="{{ board.last_activity }}">{{ board.last_activity }}</strong><small>{{ board.updated_by|default:'System' }} · {{ board.updated_at|timesince }} ago</small></td>
+          <td><div class="row-actions"><a href="{% url 'board_edit' board.pk %}">Edit</a>{% if user.is_admin %}<form method="post" action="{% url 'board_delete' board.pk %}" data-confirm="Delete {{ board.name }} ({{ board.barcode }})? Historical links will be preserved." data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace">{% csrf_token %}<button class="text-danger">Delete</button></form>{% endif %}</div></td>
+        </tr>
+        {% empty %}<tr><td colspan="7" class="empty">No boards found.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Board pages">{% if page_obj.has_previous %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.previous_page_number }}" data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.next_page_number }}" data-partial-nav data-partial-target="#board-workspace" data-partial-name="board-workspace">Next</a>{% endif %}</nav>{% endif %}
+</div>
+{% endblock %}

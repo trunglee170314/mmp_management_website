@@ -1,0 +1,27 @@
+{% extends page_base_template %}
+{% block title %}Meeting Minutes · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><p class="eyebrow">WORKSPACE / MEETING MINUTES</p><h1>Meeting Minutes</h1></div>
+  {% if user.is_admin %}<div class="header-actions"><a class="button secondary" href="{% url 'minute_writer_rotations' %}">Minute Writers</a><a class="button primary" href="{% url 'meeting_add' %}">+ Add Meeting Minute</a></div>{% endif %}
+</header>
+<div id="meeting-list-workspace" data-partial-root>
+<form class="toolbar" method="get" data-partial-nav data-partial-target="#meeting-list-workspace" data-partial-name="meeting-list-workspace"><label class="search-field"><span aria-hidden="true">⌕</span><input name="q" value="{{ query }}" placeholder="Search Meeting Minutes" aria-label="Search Meeting Minutes"></label><button class="button secondary">Search</button></form>
+<section class="panel table-panel"><div class="table-scroll"><table><thead><tr><th>Meeting</th><th>Date</th><th>Host</th><th>Minute Writer</th><th>Status</th><th>Review Progress</th><th>Open Action Items</th><th>Last Updated</th><th>Actions</th></tr></thead><tbody>
+{% for meeting in meetings %}
+  <tr>
+    <td><a class="strong-link" href="{% url 'meeting_detail' meeting.pk %}">{{ meeting.title }}</a></td>
+    <td>{{ meeting.meeting_date|date:'d M Y' }}</td>
+    <td><div class="user-inline">{{ meeting.host }}</div></td>
+    <td><div class="user-inline">{{ meeting.minute_taker }}</div>{% if meeting.writer_rotation %}<small>{{ meeting.writer_rotation.name }} · {{ meeting.get_writer_assignment_display }}</small>{% endif %}</td>
+    <td><span class="status {{ meeting.status }}">{{ meeting.get_status_display }}</span></td>
+    <td><strong>{{ meeting.reviewed_count }}</strong> / {{ meeting.task_count }} tasks</td>
+    <td>{{ meeting.open_action_count }}</td>
+    <td>{{ meeting.updated_at|timesince }} ago</td>
+    <td><div class="row-actions"><a href="{% url 'meeting_detail' meeting.pk %}">Open</a>{% if user.is_admin and meeting.status == 'draft' %}<a href="{% url 'meeting_edit' meeting.pk %}">Edit</a>{% endif %}{% if user.is_admin %}<form method="post" action="{% url 'meeting_delete' meeting.pk %}" data-confirm="Delete this Meeting Minute?" data-partial-nav data-partial-target="#meeting-list-workspace" data-partial-name="meeting-list-workspace">{% csrf_token %}<button class="text-danger">Delete</button></form>{% endif %}</div></td>
+  </tr>
+{% empty %}<tr><td colspan="9" class="empty">No Meeting Minutes found.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Meeting Minute pages">{% if page_obj.has_previous %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.previous_page_number }}" data-partial-nav data-partial-target="#meeting-list-workspace" data-partial-name="meeting-list-workspace">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.next_page_number }}" data-partial-nav data-partial-target="#meeting-list-workspace" data-partial-name="meeting-list-workspace">Next</a>{% endif %}</nav>{% endif %}
+</div>
+{% endblock %}

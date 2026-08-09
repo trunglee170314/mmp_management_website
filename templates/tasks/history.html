@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}{{ task.title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">TASKS / DETAIL</p>
+    <h1>{{ task.title }}</h1>
+    <p>{{ task.scope_label }} · {{ task.assignee|default:'Unassigned' }} · {{ task.get_status_display }}</p>
+  </div>
+  <div class="header-actions">
+    <a class="button secondary" href="{{ task.link_url }}" target="_blank" rel="noopener">Open Link ↗</a>
+    {% if not task.is_archived %}<a class="button primary" href="{% url 'task_edit' task.pk %}?next={{ return_url|urlencode }}">Edit Task</a>{% endif %}
+  </div>
+</header>
+
+<section class="panel task-actions-panel">
+    <div class="panel-head">
+      <div><h2>Action Items</h2><p>Open and completed checklist items.</p></div>
+    </div>
+    <div class="compact-list" data-action-list data-empty-message="No action items yet.">
+      {% for item in actions %}
+        {% if item.can_toggle %}<form method="post" action="{% url 'action_item_toggle' item.pk %}" class="check-row {% if item.is_completed %}completed-row{% endif %}" data-global-action-toggle data-action-row data-remove-on-complete="false">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{% url 'task_history' task.pk %}">
+          <button type="button" class="round-check {% if item.is_completed %}checked{% endif %}" aria-label="{% if item.is_completed %}Reopen{% else %}Complete{% endif %} action item" title="{% if item.is_completed %}Reopen{% else %}Mark as completed{% endif %}">{% if item.is_completed %}✓{% endif %}</button>
+          <div>
+            <strong>{{ item.content }}</strong>
+            <small><span>{{ item.assignee|default:'Unassigned' }}{% if item.meeting %} · {{ item.meeting.title }} · {{ item.meeting.meeting_date|date:'d M Y' }}{% elif item.source_meeting_title %} · {{ item.source_meeting_title }} · {{ item.source_meeting_date|date:'d M Y' }} (MM deleted){% endif %}</span><span data-action-completion-meta data-inline-completion="true" {% if not item.completed_at %}hidden{% endif %}>{% if item.completed_at %} · Completed {{ item.completed_at|date:'d M Y' }}{% endif %}</span></small>
+          </div>
+        </form>{% else %}<div class="check-row {% if item.is_completed %}completed-row{% endif %}"><span class="round-check {% if item.is_completed %}checked{% endif %}" aria-hidden="true">{% if item.is_completed %}✓{% endif %}</span><div><strong>{{ item.content }}</strong><small>{{ item.assignee|default:'Unassigned' }}{% if item.meeting %} · {{ item.meeting.title }} · {{ item.meeting.meeting_date|date:'d M Y' }}{% elif item.source_meeting_title %} · {{ item.source_meeting_title }} · {{ item.source_meeting_date|date:'d M Y' }} (MM deleted){% endif %}{% if item.completed_at %} · Completed {{ item.completed_at|date:'d M Y' }}{% endif %}</small></div></div>{% endif %}
+      {% empty %}
+        <div class="empty" data-action-empty>No action items yet.</div>
+      {% endfor %}
+    </div>
+</section>
+
+<section class="task-relations-grid">
+  <article class="panel relation-panel">
+    <div class="panel-head"><div><h2>Parent Task</h2></div></div>
+    <div class="relation-list">{% if task.parent_task %}<a href="{% url 'task_history' task.parent_task.pk %}"><strong>{{ task.parent_task.title }}</strong><span class="status {{ task.parent_task.status }}">{{ task.parent_task.get_status_display }}</span></a>{% else %}<p class="muted">This is a top-level task.</p>{% endif %}</div>
+  </article>
+  <article class="panel relation-panel">
+    <div class="panel-head"><div><h2>Subtasks</h2></div></div>
+    <div class="relation-list">{% for child in subtasks %}<a href="{% url 'task_history' child.pk %}"><span><strong>{{ child.title }}</strong><small>{{ child.assignee|default:'Unassigned' }} · {{ child.due_date|date:'d M Y'|default:'No due date' }}</small></span><span class="status {{ child.status }}">{{ child.get_status_display }}</span></a>{% empty %}<p class="muted">No subtasks.</p>{% endfor %}</div>
+  </article>
+  <article class="panel relation-panel">
+    <div class="panel-head"><div><h2>Related Tasks</h2></div></div>
+    <div class="relation-list">{% for related in related_tasks %}<a href="{% url 'task_history' related.pk %}"><span><strong>{{ related.title }}</strong><small>{{ related.assignee|default:'Unassigned' }}</small></span><span class="status {{ related.status }}">{{ related.get_status_display }}</span></a>{% empty %}<p class="muted">No related tasks.</p>{% endfor %}</div>
+  </article>
+</section>
+
+<section class="panel history-panel task-history-panel">
+  <div class="panel-head">
+    <div><h2>Change History</h2><p>Task updates and relationships in one timeline.</p></div>
+  </div>
+  <div class="timeline history-timeline">
+    {% for item in history %}
+      <div class="timeline-item history-{{ item.change_kind }}">
+        <span></span>
+        <div>
+          <div class="history-event-heading">
+            <strong>{{ item.event }}</strong>
+            {% if item.change_kind == 'added' %}<span class="history-kind added">Added</span>{% endif %}
+            {% if item.change_kind == 'removed' %}<span class="history-kind removed">Removed</span>{% endif %}
+          </div>
+          {% if item.old_value or item.new_value %}
+            <div class="history-diff-values">
+              <span class="diff-value diff-removed"><i>−</i><span>{{ item.old_value|default:'Empty' }}</span></span>
+              <span class="diff-value diff-added"><i>+</i><span>{{ item.new_value|default:'Empty' }}</span></span>
+            </div>
+          {% endif %}
+          {% if item.note %}<blockquote>{{ item.note }}</blockquote>{% endif %}
+          <small>{{ item.actor|default:'System' }} · {{ item.created_at|date:'d M Y, H:i' }}</small>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty">No history recorded.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

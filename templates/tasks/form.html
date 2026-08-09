@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header task-form-header">
+  <div><p class="eyebrow">TASKS / {% if task %}EDIT{% else %}NEW{% endif %}</p><h1>{{ title }}</h1></div>
+  {% if task %}<a class="button secondary" href="{% url 'task_history' task.pk %}?next={{ return_url|urlencode }}">View History</a>{% endif %}
+</header>
+<section class="panel form-panel task-form">
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ return_url }}">
+    {% for field in form %}
+    <div class="form-field field-{{ field.name }}">
+      <label for="{% if field.name == 'boards' or field.name == 'related_tasks' or field.name == 'scopes' %}{{ field.name }}-picker-toggle{% elif field.name == 'parent_task' %}parent-task-picker-toggle{% else %}{{ field.id_for_label }}{% endif %}">{{ field.label }}{% if field.field.required %} <b class="required">*</b>{% endif %}</label>
+      {% if field.name == 'boards' or field.name == 'related_tasks' or field.name == 'scopes' %}
+      <div class="board-picker" data-multi-picker data-empty-label="{% if field.name == 'boards' %}Select boards{% elif field.name == 'scopes' %}Select scopes{% else %}Select related tasks{% endif %}" data-count-noun="{% if field.name == 'boards' %}boards{% elif field.name == 'scopes' %}scopes{% else %}tasks{% endif %}">
+        <button id="{{ field.name }}-picker-toggle" class="board-picker-toggle" type="button" aria-expanded="false" aria-controls="{{ field.name }}-picker-options">
+          <span class="board-picker-value">{% if field.name == 'boards' %}Select boards{% elif field.name == 'scopes' %}Select scopes{% else %}Select related tasks{% endif %}</span><span class="board-picker-arrow" aria-hidden="true"></span>
+        </button>
+        <div id="{{ field.name }}-picker-options" class="board-picker-options" hidden>
+          {% if field.field.queryset %}
+          <label class="board-picker-search"><span>⌕</span><input type="search" data-multi-search placeholder="{% if field.name == 'boards' %}Search by board or barcode{% elif field.name == 'scopes' %}Search scopes{% else %}Search tasks by any words{% endif %}" autocomplete="off"></label>
+          {{ field }}
+          <span class="board-picker-empty board-picker-no-results" hidden>{% if field.name == 'boards' %}No matching boards.{% elif field.name == 'scopes' %}No matching scopes.{% else %}No matching tasks.{% endif %}</span>
+          {% else %}<span class="board-picker-empty">{% if field.name == 'boards' %}No boards available.{% elif field.name == 'scopes' %}No scopes available.{% else %}No other tasks available.{% endif %}</span>{% endif %}
+        </div>
+      </div>
+      {% elif field.name == 'parent_task' %}
+      <div class="single-task-picker" data-single-task-picker data-empty-label="No parent task">
+        <button id="parent-task-picker-toggle" class="board-picker-toggle" type="button" aria-expanded="false" aria-controls="parent-task-picker-options">
+          <span class="board-picker-value">No parent task</span><span class="board-picker-arrow" aria-hidden="true"></span>
+        </button>
+        <div id="parent-task-picker-options" class="board-picker-options" hidden>
+          <label class="board-picker-search"><span>⌕</span><input type="search" data-single-task-search placeholder="Search tasks by any words" autocomplete="off"></label>
+          <div class="single-task-options" data-single-task-options></div>
+          <span class="board-picker-empty board-picker-no-results" hidden>No matching tasks.</span>
+          {{ field }}
+        </div>
+      </div>
+      {% else %}
+      {{ field }}
+      {% endif %}
+      {% if field.help_text %}<span class="helptext">{{ field.help_text }}</span>{% endif %}
+      {% for error in field.errors %}<span class="field-error">{{ error }}</span>{% endfor %}
+    </div>
+    {% endfor %}
+    <div class="form-actions"><a class="button secondary" href="{{ return_url }}">Cancel</a><button class="button primary">Save Task</button></div>
+  </form>
+</section>
+{% endblock %}

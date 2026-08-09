@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Task Timeline · MMP management{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'core/timeline.css' %}?v=22">{% endblock %}
+{% block content %}
+<header class="page-header timeline-page-header">
+  <div>
+    <p class="eyebrow">TASKS / TIMELINE</p>
+    <h1>Task Timeline</h1>
+  </div>
+  <div class="header-actions no-print">
+    {% if user.is_admin %}
+      <details class="timeline-settings-menu">
+        <summary class="button primary">Timeline Settings ▾</summary>
+        <div class="timeline-settings-popover" role="menu">
+          <button type="button" role="menuitem" data-dialog-open="timeline-groups-dialog">Manage Groups</button>
+          <button type="button" role="menuitem" data-dialog-open="timeline-holidays-dialog">Manage Holidays</button>
+          <button type="button" role="menuitem" data-dialog-open="timeline-milestones-dialog">Manage Milestones</button>
+        </div>
+      </details>
+    {% endif %}
+  </div>
+</header>
+
+<form class="timeline-toolbar task-filter-toolbar no-print" method="get" data-filter-form data-filter-active="{% if selected_filter_count or query %}true{% else %}false{% endif %}">
+  <label class="search-field"><span aria-hidden="true">⌕</span><input name="q" value="{{ query }}" placeholder="Search tasks" aria-label="Search tasks"></label>
+  <details class="multi-filter"><summary>Scopes{% if selected_scope_filters %} <span>{{ selected_scope_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for scope in filter_scopes %}<label><input type="checkbox" name="scope" value="{{ scope.pk }}" {% if scope.pk|stringformat:'s' in selected_scope_filters %}checked{% endif %}><span>{{ scope.name }}{% if not scope.is_active %} (Inactive){% endif %}</span></label>{% empty %}<p>No scopes available.</p>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Assignees{% if selected_assignee_filters %} <span>{{ selected_assignee_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu"><label><input type="checkbox" name="assignee" value="unassigned" {% if 'unassigned' in selected_assignee_filters %}checked{% endif %}><span>Unassigned</span></label>{% for member in users %}<label><input type="checkbox" name="assignee" value="{{ member.pk }}" {% if member.pk|stringformat:'s' in selected_assignee_filters %}checked{% endif %}><span>{{ member.display_name }}{% if member.account_status != 'active' %} (Inactive){% endif %}</span></label>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Groups{% if selected_group_filters %} <span>{{ selected_group_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu"><label><input type="checkbox" name="group" value="ungrouped" {% if 'ungrouped' in selected_group_filters %}checked{% endif %}><span>Ungrouped</span></label>{% for group in groups %}<label><input type="checkbox" name="group" value="{{ group.pk }}" {% if group.pk|stringformat:'s' in selected_group_filters %}checked{% endif %}><span>{{ group.name }}</span></label>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Statuses{% if selected_status_filters %} <span>{{ selected_status_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for value, label in status_filter_options %}<label><input type="checkbox" name="status" value="{{ value }}" {% if value in selected_status_filters %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div></details>
+  <select name="page_size" aria-label="Tasks per page">
+    <option value="50" {% if page_size == 50 %}selected{% endif %}>50 tasks / page</option>
+    <option value="100" {% if page_size == 100 %}selected{% endif %}>100 tasks / page</option>
+    <option value="200" {% if page_size == 200 %}selected{% endif %}>200 tasks / page</option>
+  </select>
+  <button class="button secondary filter-apply-button{% if selected_filter_count or query %} is-filtered{% endif %}" type="submit" data-filter-submit>{% if selected_filter_count or query %}Filtered{% else %}Apply{% endif %}</button>
+</form>
+{% if selected_filter_count or query %}<div class="active-filter-strip timeline-active-filters no-print"><span>{% if selected_filter_count %}{{ selected_filter_count }} filter{{ selected_filter_count|pluralize }} selected{% endif %}{% if selected_filter_count and query %} · {% endif %}{% if query %}Search: “{{ query }}”{% endif %}</span><a href="{% url 'task_timeline' %}?page_size={{ page_size }}">Clear All</a></div>{% endif %}
+
+<section class="panel timeline-panel">
+  <div class="timeline-panel-head">
+    <div>
+      <h2>{{ timeline_year_label }} Timeline</h2>
+    </div>
+    <nav class="timeline-date-nav no-print" aria-label="Timeline dates">
+      <label class="timeline-row-limit">Visible rows<select data-timeline-row-limit aria-label="Visible task rows"><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option><option value="all">All</option></select></label>
+      <button class="button secondary" type="button" data-scroll-today>Today</button>
+      <div class="timeline-zoom-controls" aria-label="Timeline zoom">
+        <button type="button" data-timeline-zoom-out title="Zoom out" aria-label="Zoom out">−</button>
+        <span data-timeline-zoom-label aria-live="polite">100%</span>
+        <button type="button" data-timeline-zoom-in title="Zoom in" aria-label="Zoom in">+</button>
+      </div>
+    </nav>
+  </div>
+
+  <div class="timeline-scroll" style="--timeline-days: {{ day_count }}" data-timeline-scroll role="region" aria-label="Task timeline chart" tabindex="0">
+    <div class="timeline-calendar">
+      <div class="timeline-today-line-layer" aria-hidden="true">{% for day in days %}{% if day.is_today %}<i style="grid-column: {{ forloop.counter }}"></i>{% endif %}{% endfor %}</div>
+      <div class="timeline-global-milestone-layer" aria-hidden="true">{% for milestone in global_milestone_lines %}<i style="grid-column: {{ milestone.left }}; --milestone-color: {{ milestone.color }}"></i>{% endfor %}</div>
+      <div class="timeline-header-row">
+        <div class="timeline-calendar-head">
+          <div class="timeline-year-grid" data-timeline-year-grid>{% for year in years %}<div class="timeline-year-label" data-timeline-year-label data-year="{{ year.label }}" style="grid-column: {{ year.left }} / span {{ year.span }}"><span>{{ year.label }}</span></div>{% endfor %}<span class="timeline-active-year" data-timeline-active-year aria-hidden="true">{{ years.0.label }}</span></div>
+          <div class="timeline-month-grid">{% for month in months %}<div class="timeline-month-label" style="grid-column: {{ month.left }} / span {{ month.span }}">{{ month.label }}</div>{% endfor %}</div>
+          <div class="timeline-day-grid">
+            {% for day in days %}
+              <div class="timeline-day-label {% if day.is_today %}is-today{% endif %} {% if day.is_holiday %}is-holiday{% elif day.is_weekend %}is-weekend{% endif %}" style="--holiday-color: {{ day.holiday_color }}" title="{{ day.date|date:'d M Y' }}{% if day.holiday_names %} · {{ day.holiday_names }}{% endif %}">
+                <span>{{ day.number }}</span>
+                {% if day.milestone %}<span class="timeline-milestone-marker" style="--milestone-color: {{ day.milestone.color }}" title="{{ day.milestone.tooltip }}" aria-label="{{ day.milestone.count }} milestone{{ day.milestone.count|pluralize }}: {{ day.milestone.tooltip }}"><i aria-hidden="true"></i>{% if day.milestone.count > 1 %}<b>{{ day.milestone.count }}</b>{% endif %}</span>{% endif %}
+                {% if day.is_holiday %}<i aria-hidden="true"></i>{% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      {% for section in sections %}
+        <section class="timeline-section" data-timeline-section style="--group-color: {{ section.color }}">
+          <div class="timeline-group-row">
+            <button class="timeline-group-heading timeline-sticky" type="button" data-group-toggle aria-expanded="true" aria-label="Collapse {{ section.name }} group">
+              <span><i style="background: {{ section.color }}"></i>{{ section.name }}</span>
+              <small>{{ section.rows|length }} task{{ section.rows|length|pluralize }}</small>
+              <b aria-hidden="true">⌃</b>
+            </button>
+            <div class="timeline-group-calendar-fill" aria-hidden="true"></div>
+          </div>
+          {% if section.milestone_lines %}<div class="timeline-group-milestone-layer" aria-hidden="true">{% for milestone in section.milestone_lines %}<i style="grid-column: {{ milestone.left }}; --milestone-color: {{ milestone.color }}"></i>{% endfor %}</div>{% endif %}
+          <div data-group-body>
+            {% for row in section.rows %}
+              <div class="timeline-task-row">
+                <div class="timeline-day-grid timeline-track" style="--weekend-offset: {{ weekend_offset }}">
+                  {% for holiday in calendar_holidays %}<i class="timeline-track-holiday" style="grid-column: {{ holiday.left }}; --holiday-color: {{ holiday.color }}" title="{{ holiday.names }}"></i>{% endfor %}
+                  {% if user.is_admin %}
+                    <button type="button" class="timeline-bar status-{{ row.task.status }} {% if row.starts_before %}clipped-start{% endif %} {% if row.ends_after %}clipped-end{% endif %}"
+                      style="grid-column: {{ row.left }} / span {{ row.span }}" title="{{ row.task.title }} · {{ row.task.get_status_display }} · {{ row.task.assignee|default:'Unassigned' }} · {{ row.date_label }}"
+                      data-task-schedule data-action="{% url 'timeline_task_update' row.task.pk %}" data-title="{{ row.task.title }}"
+                      data-edit-action="{% url 'task_edit' row.task.pk %}?next={{ request.get_full_path|urlencode }}"
+                      data-start="{{ row.task.timeline_start_date|date:'Y-m-d' }}" data-due="{{ row.task.due_date|date:'Y-m-d' }}"
+                      data-group="{{ row.task.timeline_group_id|default:'' }}"><span class="timeline-bar-title">{{ row.task.title }}</span></button>
+                  {% else %}
+                    <a class="timeline-bar status-{{ row.task.status }} {% if row.starts_before %}clipped-start{% endif %} {% if row.ends_after %}clipped-end{% endif %}"
+                      style="grid-column: {{ row.left }} / span {{ row.span }}" href="{% url 'task_history' row.task.pk %}" title="{{ row.task.title }} · {{ row.task.get_status_display }} · {{ row.task.assignee|default:'Unassigned' }} · {{ row.date_label }}"><span class="timeline-bar-title">{{ row.task.title }}</span></a>
+                  {% endif %}
+                </div>
+              </div>
+            {% endfor %}
+            {% if not section.rows and section.milestone_lines %}<div class="timeline-milestone-empty-lane" aria-hidden="true"></div>{% endif %}
+          </div>
+        </section>
+      {% empty %}
+        <div class="timeline-empty-range">No scheduled tasks appear in this date range.</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="timeline-pagination no-print" aria-label="Timeline pages">
+      {% if page_obj.has_previous %}<a class="button secondary" href="?{% if timeline_page_query %}{{ timeline_page_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      {% if page_obj.has_next %}<a class="button secondary" href="?{% if timeline_page_query %}{{ timeline_page_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+    </nav>
+  {% endif %}
+</section>
+
+{% if unscheduled_tasks %}
+<section class="panel table-panel timeline-unscheduled">
+  <div class="panel-head">
+    <div><h2>Unscheduled Tasks</h2></div>
+    <span class="timeline-count">{{ unscheduled_tasks|length }}</span>
+  </div>
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Task</th><th>Scopes</th><th>Assignee</th><th>Status</th><th>Priority</th>{% if user.is_admin %}<th>Actions</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for task in unscheduled_tasks %}
+          <tr>
+            <td><a class="strong-link" href="{% url 'task_history' task.pk %}">{{ task.title }}</a></td>
+            <td><div class="tag-row">{% for scope in task.scope_list %}<span class="tag"><i style="background:{{ scope.color }}"></i>{{ scope.name }}</span>{% empty %}<span class="muted">—</span>{% endfor %}</div></td>
+            <td>{{ task.assignee|default:'Unassigned' }}</td>
+            <td><span class="status {{ task.status }}">{{ task.get_status_display }}</span></td>
+            <td><span class="priority {{ task.priority }}">{{ task.get_priority_display }}</span></td>
+            {% if user.is_admin %}
+              <td><div class="row-actions"><button type="button" data-task-schedule
+                data-action="{% url 'timeline_task_update' task.pk %}"
+                data-title="{{ task.title }}"
+                data-edit-action="{% url 'task_edit' task.pk %}?next={{ request.get_full_path|urlencode }}"
+                data-start=""
+                data-due=""
+                data-group="{{ task.timeline_group_id|default:'' }}">Schedule</button></div></td>
+            {% endif %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+
+{% if user.is_admin %}
+<dialog class="timeline-dialog" id="timeline-task-dialog">
+  <form method="post" class="timeline-dialog-card" data-task-schedule-form>
+    {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+    <div class="timeline-dialog-head"><div><p class="eyebrow">TIMELINE SCHEDULE</p><h2 data-task-dialog-title>Schedule Task</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div>
+    <div class="timeline-form-grid">
+      <label>Start Date<input type="date" name="timeline_start_date" data-task-start></label>
+      <label>Due Date<input type="date" name="due_date" data-task-due></label>
+      <label class="span-2">Timeline Group<select name="timeline_group" data-task-group><option value="">Ungrouped</option>{% for group in groups %}<option value="{{ group.pk }}">{{ group.name }}</option>{% endfor %}</select></label>
+    </div>
+    <p class="timeline-form-note">Leave both dates empty to place the task in Not Scheduled. Due Date remains the Task Due Date.</p>
+    <div class="form-actions"><button type="button" class="button secondary" data-dialog-close>Cancel</button><a class="button secondary" href="{% url 'tasks' %}" data-task-edit>Edit Task</a><button class="button primary" type="submit">Save Schedule</button></div>
+  </form>
+</dialog>
+
+<dialog class="timeline-dialog timeline-manager-dialog" id="timeline-groups-dialog">
+  <div class="timeline-dialog-card">
+    <div class="timeline-dialog-head"><div><p class="eyebrow">ADMIN SETTINGS</p><h2>Timeline Groups</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div>
+    <form method="post" action="{% url 'timeline_group_add' %}" class="timeline-manager-add">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+      <label>Group Name<input name="name" maxlength="100" required placeholder="e.g. Development"></label>
+      <label>Color<input type="color" name="color" value="#16835E"></label>
+      <button class="button primary" type="submit">+ Add Group</button>
+    </form>
+    <div class="timeline-manager-list">
+      {% for group in groups %}
+        <div class="timeline-manager-row">
+          <form method="post" action="{% url 'timeline_group_edit' group.pk %}" class="timeline-manager-edit">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+            <input name="name" value="{{ group.name }}" maxlength="100" required aria-label="Group name">
+            <input type="color" name="color" value="{{ group.color }}" aria-label="Group color">
+            <button class="button secondary small-button" type="submit">Save</button>
+          </form>
+          <form method="post" action="{% url 'timeline_group_delete' group.pk %}" data-confirm="Delete this group? Its tasks will move to Ungrouped.">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}"><button class="timeline-delete-link" type="submit">Delete</button>
+          </form>
+        </div>
+      {% empty %}<p class="empty">No custom groups yet.</p>{% endfor %}
+    </div>
+  </div>
+</dialog>
+
+<dialog class="timeline-dialog timeline-manager-dialog timeline-holiday-dialog" id="timeline-holidays-dialog">
+  <div class="timeline-dialog-card timeline-holiday-card">
+    <div class="timeline-dialog-head"><div><p class="eyebrow">ADMIN SETTINGS</p><h2>Holidays</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div>
+    <form method="post" action="{% url 'timeline_holiday_add' %}" class="timeline-holiday-add">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+      <label>Name<input name="name" maxlength="120" required placeholder="Holiday name"></label>
+      <label>Start Date<input type="date" name="start_date" required></label>
+      <label>End Date<input type="date" name="end_date" required></label>
+      <label>Note<input name="notes" maxlength="240" placeholder="Optional note"></label>
+      <label>Color<input type="color" name="color" value="#E07849"></label>
+      <label class="timeline-checkbox"><input type="checkbox" name="repeat_annually"> Repeat annually</label>
+      <button class="button primary" type="submit">+ Add Holiday</button>
+    </form>
+    <div class="timeline-manager-list timeline-holiday-list">
+      {% for holiday in holidays %}
+        <div class="timeline-holiday-row">
+          <form method="post" action="{% url 'timeline_holiday_edit' holiday.pk %}" class="timeline-holiday-edit">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+            <input name="name" value="{{ holiday.name }}" maxlength="120" required aria-label="Holiday name">
+            <input type="date" name="start_date" value="{{ holiday.start_date|date:'Y-m-d' }}" required aria-label="Start date">
+            <input type="date" name="end_date" value="{{ holiday.end_date|date:'Y-m-d' }}" required aria-label="End date">
+            <input name="notes" value="{{ holiday.notes }}" maxlength="240" aria-label="Note">
+            <input type="color" name="color" value="{{ holiday.color }}" aria-label="Holiday color">
+            <label class="timeline-checkbox"><input type="checkbox" name="repeat_annually" {% if holiday.repeat_annually %}checked{% endif %}> Annual</label>
+            <button class="button secondary small-button" type="submit">Save</button>
+          </form>
+          <form method="post" action="{% url 'timeline_holiday_delete' holiday.pk %}" data-confirm="Delete this holiday?">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}"><button class="timeline-delete-link" type="submit">Delete</button>
+          </form>
+        </div>
+      {% empty %}<p class="empty">No holidays configured.</p>{% endfor %}
+    </div>
+  </div>
+</dialog>
+
+<dialog class="timeline-dialog timeline-manager-dialog timeline-milestone-dialog" id="timeline-milestones-dialog">
+  <div class="timeline-dialog-card">
+    <div class="timeline-dialog-head"><div><p class="eyebrow">ADMIN SETTINGS</p><h2>Milestones</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></div>
+    <form method="post" action="{% url 'timeline_milestone_add' %}" class="timeline-milestone-add">
+      {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+      <label>Name<input name="name" maxlength="120" required placeholder="Milestone name"></label>
+      <label>Date<input type="date" name="date" required></label>
+      <label>Timeline Group<select name="timeline_group"><option value="">Global milestone</option>{% for group in groups %}<option value="{{ group.pk }}">{{ group.name }}</option>{% endfor %}</select></label>
+      <label>Color<input type="color" name="color" value="#7C3AED"></label>
+      <label class="timeline-milestone-notes">Notes<input name="notes" maxlength="240" placeholder="Optional note"></label>
+      <fieldset class="timeline-scope-options"><legend>Scopes (optional)</legend>{% for scope in scopes %}<label><input type="checkbox" name="scopes" value="{{ scope.pk }}"> {{ scope.name }}</label>{% empty %}<span class="muted">No active scopes.</span>{% endfor %}</fieldset>
+      <button class="button primary" type="submit">+ Add Milestone</button>
+    </form>
+    <p class="timeline-form-note">A global milestone crosses the full timeline. A grouped milestone is limited to that group. With no scopes selected, it appears under every scope filter.</p>
+    <div class="timeline-manager-list timeline-milestone-list">
+      {% for milestone in milestones %}
+        <div class="timeline-milestone-row">
+          <form method="post" action="{% url 'timeline_milestone_edit' milestone.pk %}" class="timeline-milestone-edit">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}">
+            <input name="name" value="{{ milestone.name }}" maxlength="120" required aria-label="Milestone name">
+            <input type="date" name="date" value="{{ milestone.date|date:'Y-m-d' }}" required aria-label="Milestone date">
+            <select name="timeline_group" aria-label="Timeline group"><option value="">Global milestone</option>{% for group in groups %}<option value="{{ group.pk }}" {% if milestone.timeline_group_id == group.pk %}selected{% endif %}>{{ group.name }}</option>{% endfor %}</select>
+            <input type="color" name="color" value="{{ milestone.color }}" aria-label="Milestone color">
+            <input name="notes" value="{{ milestone.notes }}" maxlength="240" aria-label="Notes" placeholder="Optional note">
+            <fieldset class="timeline-scope-options compact"><legend>Scopes</legend>{% for scope in milestone.edit_scope_options %}<label><input type="checkbox" name="scopes" value="{{ scope.pk }}" {% if scope in milestone.scope_list %}checked{% endif %}> {{ scope.name }}</label>{% endfor %}</fieldset>
+            <button class="button secondary small-button" type="submit">Save</button>
+          </form>
+          <form method="post" action="{% url 'timeline_milestone_delete' milestone.pk %}" data-confirm="Delete this milestone?">
+            {% csrf_token %}<input type="hidden" name="next" value="{{ timeline_return_url }}"><button class="timeline-delete-link" type="submit">Delete</button>
+          </form>
+        </div>
+      {% empty %}<p class="empty">No milestones configured.</p>{% endfor %}
+    </div>
+  </div>
+</dialog>
+{% endif %}
+{% endblock %}
+{% block scripts %}<script src="{% static 'core/timeline.js' %}?v=10"></script>{% endblock %}

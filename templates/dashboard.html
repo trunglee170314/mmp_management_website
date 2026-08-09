@@ -1,0 +1,219 @@
+{% extends page_base_template %}
+{% block title %}Dashboard · MMP management{% endblock %}
+{% block content %}
+<div id="dashboard-workspace" data-partial-root>
+<header class="page-header dashboard-header">
+  <div>
+    <p class="eyebrow">WORKSPACE / DASHBOARD</p>
+    {% if is_team_overview %}
+      <h1>Team Overview</h1>
+    {% else %}
+      <h1>Good day, {{ user.display_name|default:user.username }}.</h1>
+    {% endif %}
+  </div>
+  {% if user.is_admin %}
+    <nav class="dashboard-mode-switch" aria-label="Dashboard view">
+      <a href="{% url 'dashboard' %}?view=team" class="{% if is_team_overview %}active{% endif %}" data-partial-nav data-partial-target="#dashboard-workspace" data-partial-name="dashboard-workspace">Team Overview</a>
+      <a href="{% url 'dashboard' %}?view=mine" class="{% if not is_team_overview %}active{% endif %}" data-partial-nav data-partial-target="#dashboard-workspace" data-partial-name="dashboard-workspace">My Work</a>
+    </nav>
+  {% endif %}
+</header>
+
+{% if is_team_overview %}
+  <section class="metric-grid team-metric-grid" aria-label="Current team operations">
+    <a class="metric metric-active" href="{% url 'tasks' %}?status=active">
+      <div><small>ACTIVE TASKS</small><strong>{{ active_task_count }}</strong></div>
+    </a>
+    <a class="metric metric-inactive" href="{% url 'tasks' %}?status=inactive&inactive_year={{ selected_year }}{% if selected_member %}&assignee={{ selected_member.pk }}{% endif %}"><div><small>INACTIVE TASKS</small><strong>{{ inactive_task_count }}</strong></div></a>
+    <a class="metric metric-overdue" href="{% url 'tasks' %}?status=overdue">
+      <div><small>OVERDUE</small><strong>{{ overdue_count }}</strong></div>
+    </a>
+    <a class="metric metric-paused" href="{% url 'tasks' %}?status=paused">
+      <div><small>PAUSED TASKS</small><strong>{{ paused_count }}</strong></div>
+    </a>
+    <div class="metric metric-actions">
+      <div><small>OPEN ACTION ITEMS</small><strong>{{ open_action_count }}</strong></div>
+    </div>
+  </section>
+
+  <section class="analytics-section">
+    <div class="panel analytics-toolbar">
+      <div class="panel-head analytics-head">
+        <div>
+          <h2>Task Overview</h2>
+        </div>
+        <form method="get" class="analytics-filters" data-partial-nav data-partial-target="#dashboard-workspace" data-partial-name="dashboard-workspace">
+          <input type="hidden" name="view" value="team">
+          <label>
+            <span>Year</span>
+            <select name="year">
+              {% for year in available_years %}
+                <option value="{{ year }}" {% if year == selected_year %}selected{% endif %}>{{ year }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>
+            <span>Member</span>
+            <select name="member">
+              <option value="">All Members</option>
+              {% for member in member_filter_options %}
+                <option value="{{ member.pk }}" {% if selected_member and member.pk == selected_member.pk %}selected{% endif %}>{{ member }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button primary" type="submit">Apply</button>
+        </form>
+      </div>
+    </div>
+
+    {% if inactive_task_count %}
+      <div class="scope-chart-grid">
+        <article class="panel analytics-chart-card">
+          <div class="analytics-chart-head"><h3>Inactive Tasks by Status</h3></div>
+          <div class="pie-chart-block">
+            <div class="scope-pie" style="background: {{ status_pie_gradient }}" role="img" aria-label="Inactive task count by status">
+              <div><strong>{{ inactive_task_count }}</strong><span>Inactive</span></div>
+            </div>
+            <div class="scope-legend">
+              {% for row in inactive_status_rows %}
+                <a href="{% url 'tasks' %}?status={{ row.status }}&inactive_year={{ selected_year }}{% if selected_member %}&assignee={{ selected_member.pk }}{% endif %}">
+                  <i style="background: {{ row.color }}"></i>
+                  <span title="{{ row.name }}">{{ row.name }}</span>
+                  <strong>{{ row.count }}</strong>
+                </a>
+              {% endfor %}
+            </div>
+          </div>
+        </article>
+
+        <article class="panel analytics-chart-card" aria-label="Completed task count by scope">
+          <div class="analytics-chart-head"><h3>Completed Tasks by Scope</h3></div>
+          {% if scope_assignment_count %}
+            <div class="pie-chart-block">
+              <div class="scope-pie" style="background: {{ scope_pie_gradient }}" role="img" aria-label="Completed task scope assignment count">
+                <div><strong>{{ scope_assignment_count }}</strong><span>Completed</span></div>
+              </div>
+              <div class="scope-legend">
+                {% for scope in scope_chart_rows %}
+                  <a href="{% url 'tasks' %}?scope={{ scope.id }}&status=done&inactive_year={{ selected_year }}{% if selected_member %}&assignee={{ selected_member.pk }}{% endif %}">
+                    <i style="background: {{ scope.color }}"></i>
+                    <span title="{{ scope.name }}">{{ scope.name }}</span>
+                    <strong>{{ scope.count }}</strong>
+                  </a>
+                {% endfor %}
+              </div>
+            </div>
+          {% else %}
+            <div class="analytics-card-empty">No completed tasks found.</div>
+          {% endif %}
+        </article>
+      </div>
+    {% else %}
+      <div class="panel analytics-empty">
+        <strong>No inactive work found</strong>
+        <span>Try another year or member.</span>
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="team-lower-grid">
+    <article class="panel member-summary-panel">
+      <div class="panel-head">
+        <div><h2>Member Summary</h2></div>
+      </div>
+      <div class="table-scroll member-summary-scroll">
+        <table class="member-summary-table">
+          <thead><tr><th>Member</th><th>Active</th><th>Overdue</th><th>Open AIs</th><th>Boards</th><th>Inactive</th></tr></thead>
+          <tbody>
+            {% for member in member_rows %}
+              <tr class="{% if selected_member and member.pk == selected_member.pk %}selected-member{% endif %}">
+                <td>
+                  <a class="summary-member" href="{% url 'dashboard' %}?view=team&year={{ selected_year }}&member={{ member.pk }}">
+                    <span><strong>{{ member }}</strong><small>{{ member.get_role_display }}{% if member.account_status != 'active' %} · {{ member.get_account_status_display }}{% endif %}</small></span>
+                  </a>
+                </td>
+                <td><a href="{% url 'tasks' %}?assignee={{ member.pk }}&status=active">{{ member.active_count }}</a></td>
+                <td class="{% if member.overdue_count %}attention-number{% endif %}"><a href="{% url 'tasks' %}?assignee={{ member.pk }}&status=overdue">{{ member.overdue_count }}</a></td>
+                <td>{{ member.open_action_count }}</td>
+                <td><a href="{% url 'boards' %}?assigned_user={{ member.pk }}">{{ member.board_count }}</a></td>
+                <td><a href="{% url 'tasks' %}?assignee={{ member.pk }}&status=inactive&inactive_year={{ selected_year }}">{{ member.inactive_count }}</a></td>
+              </tr>
+            {% empty %}
+              <tr><td colspan="6" class="empty">No active members.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="panel board-chart-panel">
+      <div class="panel-head"><div><h2>Boards by Name</h2></div></div>
+      {% if board_chart_total %}
+        <div class="board-chart-block">
+          <div class="board-pie" style="background: {{ board_pie_gradient }}" role="img" aria-label="Non-archived board count by exact board name">
+            <div><strong>{{ board_chart_total }}</strong><span>Boards</span></div>
+          </div>
+          <div class="board-legend">
+            {% for row in board_chart_rows %}
+              <div class="board-legend-row">
+                <i style="background: {{ row.color }}"></i>
+                <span title="{{ row.name }}">{{ row.name }}</span>
+                <strong>{{ row.count }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+        <section class="board-availability" aria-labelledby="board-availability-title">
+          <h3 id="board-availability-title">Board Availability</h3>
+          <div class="board-availability-grid">
+            <div class="board-availability-stat is-available"><span>Available</span><strong>{{ board_availability.available }}</strong><small>No active assignee</small></div>
+            <div class="board-availability-stat is-assigned"><span>Assigned</span><strong>{{ board_availability.assigned }}</strong><small>One active assignee</small></div>
+            <div class="board-availability-stat is-shared"><span>Shared</span><strong>{{ board_availability.shared }}</strong><small>Multiple assignees</small></div>
+          </div>
+        </section>
+      {% else %}
+        <div class="analytics-card-empty">No active boards found.</div>
+      {% endif %}
+    </article>
+  </section>
+{% else %}
+  <section class="metric-grid personal-metric-grid" aria-label="My current work">
+    <a class="metric metric-active" href="{% url 'tasks' %}?tab=mine&status=active"><div><small>ACTIVE TASKS</small><strong>{{ active_task_count }}</strong></div></a>
+    <a class="metric metric-inactive" href="{% url 'tasks' %}?tab=mine&status=done&completed_year={{ current_year }}"><div><small>COMPLETED TASKS</small><strong>{{ completed_task_count }}</strong></div></a>
+    <a class="metric metric-overdue" href="{% url 'tasks' %}?tab=mine&status=overdue"><div><small>OVERDUE</small><strong>{{ overdue_count }}</strong></div></a>
+    <a class="metric metric-actions" href="{% url 'tasks' %}?tab=actions"><div><small>OPEN ACTION ITEMS</small><strong>{{ open_action_count }}</strong></div></a>
+  </section>
+
+  <section class="dashboard-grid personal-dashboard-grid">
+    <article class="panel span-2">
+      <div class="panel-head"><div><h2>My Workload by Scope</h2></div><a href="{% url 'tasks' %}?tab=mine">View tasks →</a></div>
+      <div class="bar-list">
+        {% for scope in scope_rows %}
+          <div class="bar-row"><div><span class="scope-dot" style="background:{{ scope.color }}"></span><strong>{{ scope.name }}</strong></div><div class="bar-track"><i style="width:{{ scope.bar_percent }}%;background:{{ scope.color }}"></i></div><b>{{ scope.active_count }}</b></div>
+        {% empty %}<div class="empty">No scopes have been configured.</div>{% endfor %}
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><div><h2>My Action Items</h2></div><a href="{% url 'tasks' %}?tab=actions">View all →</a></div>
+      <div class="compact-list" data-action-list data-empty-message="You have no open action items.">
+        {% for item in my_actions %}
+          <form method="post" action="{% url 'action_item_toggle' item.pk %}" class="check-row" data-global-action-toggle data-action-row data-remove-on-complete="true">
+            {% csrf_token %}<input type="hidden" name="next" value="/"><button type="button" class="round-check" aria-label="Complete action item" title="Mark as completed"></button>
+            <div><strong>{{ item.content }}</strong><small>{{ item.task.title|default:'Archived task' }}{% if item.due_date %} · Due {{ item.due_date|date:'d M' }}{% endif %}</small></div>
+          </form>
+        {% empty %}<div class="empty" data-action-empty>You have no open action items.</div>{% endfor %}
+      </div>
+    </article>
+
+    <article class="panel span-3 personal-task-stream">
+      <div class="panel-head"><div><h2>My Active Tasks</h2></div><a href="{% url 'tasks' %}?tab=mine">View all →</a></div>
+      <div class="table-scroll"><table><thead><tr><th>Task</th><th>Scopes</th><th>Priority</th><th>Due Date</th><th>Status</th></tr></thead><tbody>
+        {% for task in recent_tasks %}<tr><td><a class="strong-link" href="{% url 'task_edit' task.pk %}">{{ task.title }}</a></td><td><div class="tag-row">{% for scope in task.scope_list %}<span class="tag"><i style="background:{{ scope.color }}"></i>{{ scope.name }}</span>{% empty %}<span class="muted">—</span>{% endfor %}</div></td><td><span class="priority {{ task.priority }}">{{ task.get_priority_display }}</span></td><td>{% if task.due_date %}{{ task.due_date|date:'d M Y' }}{% else %}—{% endif %}</td><td><span class="status {{ task.status }}">{{ task.get_status_display }}</span></td></tr>
+        {% empty %}<tr><td colspan="5" class="empty">You have no active tasks.</td></tr>{% endfor %}
+      </tbody></table></div>
+    </article>
+  </section>
+{% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+/* Shared protection against long content breaking data tables. */
+.table-scroll td {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.table-scroll td > *,
+.table-scroll .user-cell > div,
+.table-scroll .user-inline {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.table-scroll .strong-link,
+.table-scroll .activity-text,
+.table-scroll .user-cell strong,
+.table-scroll .user-cell small,
+.table-scroll .user-inline {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.table-scroll .tag,
+.table-scroll .user-chip {
+  max-width: 190px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.table-scroll .row-actions {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.table-clamp {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.table-ellipsis {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

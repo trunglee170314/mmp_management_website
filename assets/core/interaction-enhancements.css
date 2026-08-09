@@ -1,0 +1,520 @@
+:root {
+  --mmp-sidebar-width: 236px;
+  --mmp-meeting-nav-width: 285px;
+}
+
+.sidebar {
+  width: 236px;
+  transition: transform .2s ease;
+}
+
+.app-main {
+  margin-left: 236px;
+  transition: margin-left .2s ease;
+}
+
+.meeting-pane-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 50px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, .28);
+  transform: translate(-50%, -50%);
+  transition: background-color .15s ease, width .15s ease;
+}
+
+.sidebar-collapse-toggle {
+  position: fixed;
+  z-index: 12;
+  top: 50%;
+  left: 221px;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 3px solid #f5f7f6;
+  border-radius: 50%;
+  background: #006241;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(20, 57, 43, .2);
+  cursor: pointer;
+  transform: translateY(-50%);
+  transition: left .2s ease, background-color .15s ease, transform .15s ease;
+}
+
+.sidebar-collapse-toggle:hover,
+.sidebar-collapse-toggle:focus-visible {
+  background: #004a31;
+  color: #fff;
+  outline: 0;
+  transform: translateY(-50%) scale(1.08);
+}
+
+.sidebar-collapse-toggle span {
+  display: block;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+body.sidebar-is-collapsed .sidebar {
+  transform: translateX(-100%);
+}
+
+body.sidebar-is-collapsed .app-main {
+  margin-left: 0;
+}
+
+body.sidebar-is-collapsed .sidebar-collapse-toggle {
+  left: 8px;
+}
+
+body.is-resizing-pane {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.meeting-layout {
+  grid-template-columns: var(--mmp-meeting-nav-width) 10px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.meeting-pane-resizer {
+  position: sticky;
+  top: 20px;
+  width: 10px;
+  height: calc(100vh - 40px);
+  min-height: 220px;
+  padding: 0;
+  border: 0;
+  border-radius: 99px;
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.meeting-pane-resizer::after {
+  height: 64px;
+  background: #bfd0c6;
+}
+
+.meeting-pane-resizer:hover::after,
+.meeting-pane-resizer:focus-visible::after {
+  width: 4px;
+  background: #006241;
+}
+
+.task-info-grid {
+  grid-template-columns: minmax(100px, .75fr) minmax(130px, .95fr) minmax(90px, .6fr) minmax(110px, .7fr) minmax(150px, 1.2fr);
+}
+
+.review-control-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.review-choice-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-choice {
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid #d7ded9;
+  border-radius: 8px;
+  background: #fff;
+  color: #465048;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color .15s ease, background-color .15s ease, color .15s ease, transform .15s ease;
+}
+
+.review-choice:hover {
+  border-color: #006241;
+  transform: translateY(-1px);
+}
+
+.review-choice.active.pending {
+  border-color: #8d9390;
+  background: #edf0ee;
+  color: #444b47;
+}
+
+.review-choice.active.reviewed {
+  border-color: #006241;
+  background: #006241;
+  color: #fff;
+}
+
+.review-choice.active.no_update {
+  border-color: #bd782c;
+  background: #fff0dc;
+  color: #8b571f;
+}
+
+.review-choice.active.skipped {
+  border-color: #9d332f;
+  background: #9d332f;
+  color: #fff;
+}
+
+.meeting-nav a.skipped > span {
+  background: #9d332f;
+  color: #fff;
+}
+
+.review-choice:disabled {
+  cursor: wait;
+  opacity: .6;
+  transform: none;
+}
+
+.sortable-heading {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: -7px -8px;
+  padding: 7px 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.sortable-heading::after {
+  content: '↕';
+  color: #b1adb5;
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+th[aria-sort='ascending'] .sortable-heading::after {
+  content: '↑';
+  color: #006241;
+}
+
+th[aria-sort='descending'] .sortable-heading::after {
+  content: '↓';
+  color: #006241;
+}
+
+.task-relations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.task-actions-panel,
+.task-history-panel {
+  width: 100%;
+}
+
+.task-history-panel {
+  margin-top: 18px;
+}
+
+.relation-list {
+  padding: 8px 20px 16px;
+}
+
+.relation-list > a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+}
+
+.relation-list > a:last-child {
+  border-bottom: 0;
+}
+
+.relation-list > a:hover strong {
+  color: #006241;
+}
+
+.relation-list strong,
+.relation-list small {
+  display: block;
+}
+
+.relation-list strong {
+  font-size: 13px;
+}
+
+.relation-list small,
+.relation-list > p {
+  font-size: 11px;
+}
+
+.relation-list small {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+.relation-panel .panel-head > span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Keep long task titles/options from expanding a grid track beyond the form card. */
+.task-form form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.task-form form > .form-field {
+  min-width: 0;
+}
+
+.task-form .form-field > input,
+.task-form .form-field > select,
+.task-form .form-field > textarea,
+.task-form .form-field > .board-picker {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.task-table th:nth-child(2),
+.task-table td:nth-child(2),
+.task-table th:nth-child(6),
+.task-table td:nth-child(6) {
+  min-width: 120px;
+}
+
+.task-table td:nth-child(6) .tag {
+  max-width: none;
+  white-space: nowrap;
+  overflow-wrap: normal;
+}
+
+@media (max-width: 1100px) {
+  .meeting-layout {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+
+  .meeting-pane-resizer {
+    display: none;
+  }
+
+  .task-relations-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1450px) and (min-width: 1101px) {
+  .task-info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .sidebar {
+    width: auto;
+  }
+
+  .app-main {
+    margin-left: 0;
+  }
+
+  .sidebar-collapse-toggle {
+    display: none;
+  }
+
+  .review-choice-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .task-info-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media print {
+  .meeting-layout {
+    display: block;
+  }
+}
+
+/* Shared list pagination. Timeline keeps its own compact in-grid variant. */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--line);
+  background: #fafbfa;
+}
+
+.pagination span {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pagination .button {
+  min-width: 88px;
+  justify-content: center;
+}
+
+.button.secondary.timeline-entry-button {
+  border-color: #df5a55;
+  background: #fff1f0;
+  color: #b92f2a;
+  box-shadow: 0 4px 12px rgba(185, 47, 42, 0.1);
+}
+
+.button.secondary.timeline-entry-button:hover {
+  border-color: #c83d37;
+  background: #fde2e0;
+  color: #9f231f;
+  box-shadow: 0 6px 16px rgba(185, 47, 42, 0.16);
+}
+
+/* Ordinary actions stay neutral; green is reserved for an active selection. */
+.button.primary,
+.button.secondary {
+  border-color: #d8ddd9;
+  background: #fff;
+  color: #1b211e;
+  box-shadow: none;
+}
+
+.button.primary:hover,
+.button.secondary:hover {
+  border-color: #aebdb5;
+  background: #f4f8f5;
+  color: #123f2f;
+  box-shadow: none;
+}
+
+.button.primary:focus-visible,
+.button.secondary:focus-visible {
+  border-color: #006241;
+  outline: 3px solid rgba(0, 98, 65, .14);
+  outline-offset: 1px;
+}
+
+.button.primary.text-danger,
+.button.secondary.text-danger,
+.button.back-button {
+  border-color: #dfaaaa;
+  background: #fff;
+  color: #a31f1f;
+  box-shadow: none;
+}
+
+.button.primary.text-danger:hover,
+.button.secondary.text-danger:hover,
+.button.back-button:hover {
+  border-color: #c96d6d;
+  background: #fff7f7;
+  color: #861717;
+  box-shadow: none;
+}
+
+.button.secondary.timeline-entry-button,
+.button.secondary.timeline-entry-button:hover {
+  border-color: #d8ddd9;
+  background: #fff;
+  color: #1b211e;
+  box-shadow: none;
+}
+
+.review-choice {
+  border-color: #d8ddd9;
+  background: #fff;
+  color: #1b211e;
+}
+
+.review-choice.active.pending,
+.review-choice.active.reviewed,
+.review-choice.active.no_update,
+.review-choice.active.skipped {
+  border-color: #006241;
+  background: #006241;
+  color: #fff;
+  box-shadow: 0 3px 9px rgba(0, 92, 61, .18);
+}
+
+@media (max-width: 760px) {
+  .pagination {
+    justify-content: center;
+  }
+}
+
+/* Keep table actions visibly actionable and consistent across list pages. */
+.row-actions,
+.scope-actions {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.row-actions a,
+.row-actions button,
+.scope-actions a,
+.scope-actions button {
+  min-height: 29px;
+  padding: 5px 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cfd9d2;
+  border-radius: 7px;
+  background: #fff;
+  color: #3c4a42;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.row-actions a:hover,
+.row-actions button:hover,
+.scope-actions a:hover,
+.scope-actions button:hover {
+  border-color: #82a995;
+  background: #edf6f1;
+  color: #005c3d;
+}
+
+.row-actions .text-danger,
+.scope-actions .text-danger {
+  border-color: #efc0bd;
+  background: #fff;
+  color: #b63631 !important;
+}
+
+.row-actions .text-success,
+.scope-actions .text-success {
+  border-color: #b8dcc9;
+  background: #fff;
+  color: #08734d !important;
+}
+
+.row-actions button:disabled,
+.scope-actions button:disabled {
+  border-color: #e1e5e2;
+  background: #f5f6f5;
+  color: #a1aaa4 !important;
+  cursor: not-allowed;
+}

@@ -1,0 +1,24 @@
+{% extends page_base_template %}
+{% block title %}Minute Writers · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><p class="eyebrow">WORKSPACE / MEETING MINUTES</p><h1>Minute Writers</h1><p>Manage automatic writer rotations by meeting occurrence.</p></div>
+  <div class="header-actions"><a class="button primary" href="{% url 'minute_writer_rotation_add' %}">+ Add Rotation</a></div>
+</header>
+<section class="panel table-panel"><div class="table-scroll"><table>
+  <thead><tr><th>Rotation</th><th>Start Date</th><th>Writer Order</th><th>Next Meeting</th><th>Following Meeting</th><th>Status</th><th>Actions</th></tr></thead>
+  <tbody>
+  {% for rotation in rotations %}
+    <tr>
+      <td><strong>{{ rotation.name }}</strong></td>
+      <td>{{ rotation.anchor_date|date:'d M Y' }}</td>
+      <td><div class="rotation-member-chips">{% for member in rotation.writer_members.all %}<span class="tag">{{ forloop.counter }}. {{ member.user }}</span>{% empty %}<span class="muted">No writers</span>{% endfor %}</div></td>
+      <td>{% if rotation.next_writer %}{{ rotation.next_writer }}{% else %}<span class="muted">Unavailable</span>{% endif %}</td>
+      <td>{% if rotation.following_writer %}{{ rotation.following_writer }}{% else %}<span class="muted">Unavailable</span>{% endif %}</td>
+      <td><span class="status {% if rotation.is_active %}active{% else %}inactive{% endif %}">{% if rotation.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+      <td><div class="row-actions"><a href="{% url 'minute_writer_rotation_edit' rotation.pk %}">Edit</a><form method="post" action="{% url 'minute_writer_rotation_delete' rotation.pk %}" data-confirm="Delete this writer rotation? Existing Meeting Minutes will keep their assigned writer.">{% csrf_token %}<button class="text-danger">Delete</button></form></div></td>
+    </tr>
+  {% empty %}<tr><td colspan="7" class="empty">No Minute Writer rotations configured.</td></tr>{% endfor %}
+  </tbody>
+</table></div></section>
+{% endblock %}

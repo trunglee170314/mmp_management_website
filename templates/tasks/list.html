@@ -1,0 +1,65 @@
+{% extends page_base_template %}
+{% block title %}Tasks · MMP management{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">WORKSPACE / TASKS</p><h1>Task Management</h1></div><div class="header-actions"><a class="button secondary timeline-entry-button" href="{% url 'task_timeline' %}">Timeline</a>{% if user.is_admin %}<a class="button primary" href="{% url 'scopes' %}">Scope Management</a>{% endif %}<a class="button primary" href="{% url 'task_add' %}">+ Add Task</a></div></header>
+<div id="task-workspace" data-partial-root>
+<nav class="task-view-buttons" aria-label="Task views"><form method="get" action="{% url 'tasks' %}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace"><button class="button {% if tab == 'all' %}primary{% else %}secondary{% endif %}" type="submit">All Tasks</button></form><form method="get" action="{% url 'tasks' %}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace"><input type="hidden" name="tab" value="mine"><button class="button {% if tab == 'mine' %}primary{% else %}secondary{% endif %}" type="submit">My Tasks</button></form><form method="get" action="{% url 'tasks' %}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace"><input type="hidden" name="tab" value="actions"><button class="button {% if tab == 'actions' %}primary{% else %}secondary{% endif %}" type="submit">My Action Items</button></form></nav>
+{% if tab == 'actions' %}
+<div class="sub-toolbar"><p>Concrete next steps assigned to you.</p>{% if request.GET.show == 'all' %}<a class="button secondary small-button" href="{% url 'tasks' %}?tab=actions" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Hide completed</a>{% else %}<a class="button secondary small-button" href="{% url 'tasks' %}?tab=actions&show=all" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Show completed</a>{% endif %}</div>
+<section class="panel table-panel"><div class="table-scroll"><table class="action-items-table"><thead><tr><th></th><th>Action Item</th><th>Parent Task</th><th>Scopes</th><th>Created In</th><th>Due Date</th><th>Status</th></tr></thead><tbody data-action-list data-empty-message="You have no open action items.">{% for item in actions %}<tr class="{% if item.is_completed %}completed-row{% endif %}" data-action-row data-remove-on-complete="{% if request.GET.show == 'all' %}false{% else %}true{% endif %}"><td><form method="post" action="{% url 'action_item_toggle' item.pk %}" data-global-action-toggle>{% csrf_token %}<input type="hidden" name="next" value="{% url 'tasks' %}?tab=actions{% if request.GET.show == 'all' %}&show=all{% endif %}"><button type="button" class="round-check {% if item.is_completed %}checked{% endif %}" aria-label="{% if item.is_completed %}Reopen{% else %}Complete{% endif %} action item" title="{% if item.is_completed %}Reopen{% else %}Mark as completed{% endif %}">{% if item.is_completed %}✓{% endif %}</button></form></td><td><strong>{{ item.content }}</strong><small data-action-completion-meta {% if not item.is_completed %}hidden{% endif %}>{% if item.is_completed %}Completed by {{ item.completed_by }} · {{ item.completed_at|date:'d M Y, H:i' }}{% endif %}</small></td><td>{% if item.task %}<a class="strong-link" href="{% url 'task_history' item.task.pk %}">{{ item.task.title }}</a>{% else %}Archived task{% endif %}</td><td>{% if item.task %}<div class="tag-row">{% for scope in item.task.scope_list %}<span class="tag"><i style="background:{{ scope.color }}"></i>{{ scope.name }}</span>{% empty %}<span class="muted">—</span>{% endfor %}</div>{% else %}—{% endif %}</td><td>{% if item.meeting %}<a class="strong-link" href="{% url 'meeting_detail' item.meeting.pk %}">{{ item.meeting.title }}</a><small>{{ item.meeting.meeting_date|date:'d M Y' }}</small>{% elif item.source_meeting_title %}<strong>{{ item.source_meeting_title }}</strong><small>{{ item.source_meeting_date|date:'d M Y' }} · MM deleted</small>{% else %}—{% endif %}</td><td>{{ item.due_date|date:'d M Y'|default:'—' }}</td><td><span class="status {% if item.is_completed %}done{% else %}todo{% endif %}" data-action-status>{% if item.is_completed %}Completed{% else %}Open{% endif %}</span></td></tr>{% empty %}<tr data-action-empty><td colspan="7" class="empty">You have no open action items.</td></tr>{% endfor %}</tbody></table></div></section>
+{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Action Item pages">{% if page_obj.has_previous %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.previous_page_number }}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.next_page_number }}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Next</a>{% endif %}</nav>{% endif %}
+{% else %}
+<form class="toolbar wrap task-filter-toolbar" method="get" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace" data-filter-form data-filter-active="{% if selected_filter_count or query %}true{% else %}false{% endif %}">
+  <input type="hidden" name="tab" value="{{ tab }}">
+  <label class="search-field"><span aria-hidden="true">⌕</span><input name="q" value="{{ query }}" placeholder="Search tasks" aria-label="Search tasks"></label>
+  <details class="multi-filter"><summary>Scopes{% if selected_scope_filters %} <span>{{ selected_scope_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for scope in scopes %}<label><input type="checkbox" name="scope" value="{{ scope.pk }}" {% if scope.pk|stringformat:'s' in selected_scope_filters %}checked{% endif %}><span>{{ scope.name }}</span></label>{% empty %}<p>No scopes available.</p>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Assignees{% if selected_assignee_filters %} <span>{{ selected_assignee_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu"><label><input type="checkbox" name="assignee" value="unassigned" {% if 'unassigned' in selected_assignee_filters %}checked{% endif %}><span>Unassigned</span></label>{% for member in users %}<label><input type="checkbox" name="assignee" value="{{ member.pk }}" {% if member.pk|stringformat:'s' in selected_assignee_filters %}checked{% endif %}><span>{{ member.display_name }}</span></label>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Statuses{% if selected_status_filters %} <span>{{ selected_status_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for value,label in status_filter_options %}<label><input type="checkbox" name="status" value="{{ value }}" {% if value in selected_status_filters %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div></details>
+  <details class="multi-filter"><summary>Priorities{% if selected_priority_filters %} <span>{{ selected_priority_filters|length }}</span>{% endif %}</summary><div class="multi-filter-menu">{% for value,label in priority_choices %}<label><input type="checkbox" name="priority" value="{{ value }}" {% if value in selected_priority_filters %}checked{% endif %}><span>{{ label }}</span></label>{% endfor %}</div></details>
+  <button class="button secondary filter-apply-button{% if selected_filter_count or query %} is-filtered{% endif %}" type="submit" data-filter-submit>{% if selected_filter_count or query %}Filtered{% else %}Apply{% endif %}</button>
+</form>
+{% if selected_filter_count or query %}<div class="active-filter-strip"><span>{% if selected_filter_count %}{{ selected_filter_count }} filter{{ selected_filter_count|pluralize }} selected{% endif %}{% if selected_filter_count and query %} · {% endif %}{% if query %}Search: “{{ query }}”{% endif %}</span><a href="{% url 'tasks' %}?tab={{ tab }}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Clear All</a></div>{% endif %}
+<section class="panel table-panel">
+  <div class="table-scroll">
+    <table class="task-table">
+      <thead>
+        <tr><th>Task</th><th>Assignee</th><th>Link</th><th>Priority</th><th>Due Date</th><th>Scopes</th><th>Status</th><th>Boards</th><th>Last Activity</th>{% if system_settings.task_score_enabled %}<th>Score</th>{% endif %}<th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for task in tasks %}
+        <tr>
+          <td class="task-name-cell"><a class="strong-link table-clamp" href="{% url 'task_history' task.pk %}?next={{ request.get_full_path|urlencode }}" title="{{ task.title }}">{{ task.title }}</a>{% if task.parent_task %}<small class="task-parent-label" title="Subtask of {{ task.parent_task.title }}">Subtask of {{ task.parent_task.title }}</small>{% endif %}{% if task.subtask_count %}<small>{{ task.subtask_count }} subtask{{ task.subtask_count|pluralize }}</small>{% endif %}{% if task.open_action_count %}<small>{{ task.open_action_count }} open action item{{ task.open_action_count|pluralize }}</small>{% endif %}</td>
+          <td>{% if task.assignee %}<div class="user-inline">{{ task.assignee }}</div>{% else %}<span class="muted">Unassigned</span>{% endif %}</td>
+          <td><a class="external-link" href="{{ task.link_url }}" target="_blank" rel="noopener">Open ↗</a></td>
+          <td><span class="priority {{ task.priority }}">{{ task.get_priority_display }}</span></td>
+          <td class="{% if task.due_date and task.due_date < today %}overdue{% endif %}">{{ task.due_date|date:'d M Y'|default:'—' }}</td>
+          <td><div class="tag-row">{% for scope in task.scope_list %}<span class="tag" title="{{ scope.name }}"><i style="background:{{ scope.color }}"></i>{{ scope.name }}</span>{% empty %}<span class="muted">—</span>{% endfor %}</div></td>
+          <td><span class="status {{ task.status }}">{{ task.get_status_display }}</span></td>
+          <td>
+            <div class="tag-row">
+              {% for board in task.active_board_list|slice:':3' %}<span class="tag board-tag" title="{{ board.display_label }}">{{ board.display_label }}</span>{% empty %}<span class="muted">—</span>{% endfor %}
+              {% if task.active_board_list|length > 3 %}
+              <details class="board-overflow">
+                <summary class="tag board-more-tag">+{{ task.active_board_list|length|add:'-3' }} more</summary>
+                <div class="board-overflow-menu" aria-label="Additional boards">
+                  {% for board in task.active_board_list|slice:'3:' %}<span class="tag board-tag" title="{{ board.display_label }}">{{ board.display_label }}</span>{% endfor %}
+                </div>
+              </details>
+              {% endif %}
+            </div>
+          </td>
+          <td>{% if task.last_history %}<strong class="activity-text table-clamp" title="{{ task.last_history.event }}">{{ task.last_history.event }}</strong><small>{{ task.last_history.actor|default:'System' }} · {{ task.last_history.created_at|timesince }} ago</small>{% else %}<small>Created {{ task.created_at|timesince }} ago<br>by {{ task.created_by|default:'System' }}</small>{% endif %}</td>
+          {% if system_settings.task_score_enabled %}<td>{{ task.score|default:'—' }}</td>{% endif %}
+          <td><div class="row-actions"><a href="{% url 'task_edit' task.pk %}?next={{ request.get_full_path|urlencode }}">Edit</a>{% if user.is_admin %}<form method="post" action="{% url 'task_delete' task.pk %}" data-confirm="Delete this task? Boards will be released and history retained." data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">{% csrf_token %}<button class="text-danger">Delete</button></form>{% endif %}</div></td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="11" class="empty">No tasks match these filters.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Task pages">{% if page_obj.has_previous %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.previous_page_number }}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.next_page_number }}" data-partial-nav data-partial-target="#task-workspace" data-partial-name="task-workspace">Next</a>{% endif %}</nav>{% endif %}
+{% endif %}
+</div>
+{% endblock %}

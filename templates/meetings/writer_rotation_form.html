@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}{% if rotation %}Edit{% else %}Add{% endif %} Writer Rotation · MMP management{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">WORKSPACE / MEETING MINUTES</p><h1>{% if rotation %}Edit{% else %}Add{% endif %} Writer Rotation</h1><p>The first automatic meeting on or after the Rotation Start Date uses the first writer.</p></div></header>
+<section class="panel form-panel writer-rotation-panel">
+  <form method="post" class="stack-form" id="writer-rotation-form">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <p>{{ form.name.errors }}{{ form.name.label_tag }}{{ form.name }}</p>
+    <p>{{ form.anchor_date.errors }}{{ form.anchor_date.label_tag }}{{ form.anchor_date }}<span class="helptext">Each automatic meeting occurrence advances to the next writer.</span></p>
+    <p class="rotation-active-field">{{ form.is_active.errors }}{{ form.is_active }}{{ form.is_active.label_tag }}</p>
+    {{ form.writers_order }}
+    <div class="writer-order-field">
+      <div><strong>Minute Writers</strong><span class="helptext">Use Move Up and Move Down to define the occurrence order.</span></div>
+      {{ form.writers_order.errors }}
+      <div id="writer-order-list" class="writer-order-list"></div>
+      <button type="button" class="button secondary small-button" id="add-writer-row">+ Add Writer</button>
+    </div>
+    <select id="writer-option-source" hidden aria-hidden="true">
+      {% for writer in writer_options %}<option value="{{ writer.pk }}">{{ writer }}{% if writer.account_status != 'active' %} (Inactive){% endif %}</option>{% endfor %}
+    </select>
+    <div class="form-actions"><a class="button secondary" href="{% url 'minute_writer_rotations' %}">Cancel</a><button class="button primary">Save Rotation</button></div>
+  </form>
+</section>
+<script>
+(() => {
+  const form = document.getElementById('writer-rotation-form');
+  const list = document.getElementById('writer-order-list');
+  const source = document.getElementById('writer-option-source');
+  const orderInput = document.getElementById('id_writers_order');
+  const addButton = document.getElementById('add-writer-row');
+  if (!form || !list || !source || !orderInput || !addButton) return;
+
+  function syncOrder() {
+    const selects = [...list.querySelectorAll('select')];
+    orderInput.value = selects.map(select => select.value).filter(Boolean).join(',');
+    const selectedValues = selects.map(select => select.value).filter(Boolean);
+    selects.forEach(select => {
+      [...select.options].forEach(option => {
+        option.disabled = Boolean(option.value && option.value !== select.value && selectedValues.includes(option.value));
+      });
+    });
+    [...list.children].forEach((row, index) => {
+      row.querySelector('[data-move-up]').disabled = index === 0;
+      row.querySelector('[data-move-down]').disabled = index === list.children.length - 1;
+      row.querySelector('.writer-position').textContent = `${index + 1}`;
+    });
+  }
+
+  function addRow(selectedValue = '') {
+    const row = document.createElement('div');
+    row.className = 'writer-order-row';
+    const position = document.createElement('span');
+    position.className = 'writer-position';
+    const select = document.createElement('select');
+    select.setAttribute('aria-label', 'Minute Writer');
+    select.innerHTML = '<option value="">Select writer</option>' + source.innerHTML;
+    select.value = selectedValue;
+    const actions = document.createElement('div');
+    actions.className = 'writer-order-actions';
+    actions.innerHTML = '<button type="button" class="button secondary mini" data-move-up>Move Up</button><button type="button" class="button secondary mini" data-move-down>Move Down</button><button type="button" class="button secondary mini text-danger" data-remove>Remove</button>';
+    row.append(position, select, actions);
+    list.appendChild(row);
+    select.addEventListener('change', syncOrder);
+    actions.querySelector('[data-move-up]').addEventListener('click', () => {
+      if (row.previousElementSibling) list.insertBefore(row, row.previousElementSibling);
+      syncOrder();
+    });
+    actions.querySelector('[data-move-down]').addEventListener('click', () => {
+      if (row.nextElementSibling) list.insertBefore(row.nextElementSibling, row);
+      syncOrder();
+    });
+    actions.querySelector('[data-remove]').addEventListener('click', () => {
+      row.remove();
+      syncOrder();
+    });
+    syncOrder();
+  }
+
+  orderInput.value.split(',').filter(Boolean).forEach(addRow);
+  if (!list.children.length) addRow();
+  addButton.addEventListener('click', () => addRow());
+  form.addEventListener('submit', syncOrder);
+})();
+</script>
+{% endblock %}

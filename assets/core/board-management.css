@@ -1,0 +1,73 @@
+.board-toolbar .search-field {
+  min-width: 260px;
+}
+
+.board-search-button {
+  min-width: 92px;
+  box-shadow: none;
+}
+
+.board-table {
+  min-width: 1120px;
+}
+
+.board-table th:nth-child(1),
+.board-table td:nth-child(1) {
+  width: 140px;
+}
+
+.board-table th:nth-child(2),
+.board-table td:nth-child(2) {
+  width: 160px;
+}
+
+.board-table th:nth-child(3),
+.board-table td:nth-child(3) {
+  width: 280px;
+}
+
+.board-table th:nth-child(4),
+.board-table td:nth-child(4) {
+  width: 170px;
+}
+
+.board-table .notes-cell {
+  width: 240px;
+  max-width: 240px;
+}
+
+.board-table th:nth-child(6),
+.board-table td:nth-child(6) {
+  width: 290px;
+}
+
+.board-table th:last-child,
+.board-table td:last-child {
+  width: 100px;
+}
+
+.board-barcode {
+  display: inline-flex;
+  padding: 4px 7px;
+  border: 1px solid #d7e4dc;
+  border-radius: 6px;
+  background: #f2f8f4;
+  color: #145d44;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 760px) {
+  .board-toolbar .search-field {
+    min-width: 100%;
+  }
+
+  .board-toolbar select,
+  .board-search-button {
+    flex: 1;
+  }
+}

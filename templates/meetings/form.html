@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">WORKSPACE / MEETING MINUTES</p><h1>{{ title }}</h1><p>{{ subtitle }}</p></div></header>
+<section class="panel form-panel meeting-form-panel">
+  <form method="post" class="stack-form" id="meeting-minute-form" data-writer-preview-url="{% url 'minute_writer_preview' %}" data-meeting-id="{{ form.instance.pk|default:'' }}">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <p id="scheduled-writer-preview" class="rotation-preview" aria-live="polite"></p>
+    <div class="form-actions"><a class="button secondary" href="{{ cancel_href }}">Cancel</a><button class="button primary">Save</button></div>
+  </form>
+</section>
+<script>
+(() => {
+  const form = document.getElementById('meeting-minute-form');
+  const assignment = document.getElementById('id_writer_assignment');
+  const rotation = document.getElementById('id_writer_rotation');
+  const meetingDate = document.getElementById('id_meeting_date');
+  const writer = document.getElementById('id_minute_taker');
+  const preview = document.getElementById('scheduled-writer-preview');
+  if (!form || !assignment || !rotation || !meetingDate || !writer || !preview) return;
+
+  let previewRequest = 0;
+  async function updateWriter() {
+    const requestId = ++previewRequest;
+    const automatic = assignment.value === 'automatic';
+    writer.disabled = automatic;
+    preview.classList.toggle('is-visible', automatic);
+    if (!automatic) {
+      preview.textContent = 'Manual assignment applies only to this Meeting Minute.';
+      return;
+    }
+    if (!rotation.value || !meetingDate.value) {
+      preview.textContent = 'Select a Writer Rotation and Meeting Date to see the scheduled writer.';
+      return;
+    }
+    preview.textContent = 'Checking the rotation...';
+    const url = new URL(form.dataset.writerPreviewUrl, window.location.origin);
+    url.searchParams.set('rotation', rotation.value);
+    url.searchParams.set('meeting_date', meetingDate.value);
+    if (form.dataset.meetingId) url.searchParams.set('meeting', form.dataset.meetingId);
+    try {
+      const response = await fetch(url, {headers: {'Accept': 'application/json'}});
+      const data = await response.json();
+      if (requestId !== previewRequest || assignment.value !== 'automatic' || rotation.value !== url.searchParams.get('rotation') || meetingDate.value !== url.searchParams.get('meeting_date')) return;
+      if (!response.ok) throw new Error(data.error || 'Unable to calculate the scheduled writer.');
+      writer.value = String(data.writer_id);
+      preview.textContent = `Scheduled writer: ${data.writer_name} (${data.rotation_name})`;
+    } catch (error) {
+      if (requestId !== previewRequest || assignment.value !== 'automatic') return;
+      preview.textContent = error.message;
+    }
+  }
+
+  assignment.addEventListener('change', updateWriter);
+  rotation.addEventListener('change', updateWriter);
+  meetingDate.addEventListener('change', updateWriter);
+  updateWriter();
+})();
+</script>
+{% endblock %}

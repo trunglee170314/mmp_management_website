@@ -1,0 +1,14 @@
+.env
+.git
+.gitignore
+.venv/
+db.sqlite3
+management.db*
+backups/
+media/
+staticfiles/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+tmp/

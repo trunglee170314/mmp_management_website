@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}{{ board.name }} History · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">BOARDS / HISTORY</p>
+    <h1>{{ board.name }}</h1>
+    <p>Barcode: {{ board.barcode }}</p>
+  </div>
+  <a class="button secondary back-button" href="{% url 'boards' %}">← Back to Boards</a>
+</header>
+
+<section class="panel history-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Change History</h2>
+      <p>Board updates and assignments in one timeline.</p>
+    </div>
+  </div>
+  <div class="timeline history-timeline">
+    {% for log in logs %}
+      <div class="timeline-item history-{{ log.change_kind }}">
+        <span></span>
+        <div>
+          <div class="history-event-heading">
+            <strong>{{ log.action }}</strong>
+            {% if log.change_kind == 'added' %}<span class="history-kind added">Added</span>{% endif %}
+            {% if log.change_kind == 'removed' %}<span class="history-kind removed">Removed</span>{% endif %}
+          </div>
+          {% for change in log.change_rows %}
+            <div class="history-field-diff">
+              <b>{{ change.label }}</b>
+              <div class="history-diff-values">
+                <span class="diff-value diff-removed"><i>−</i><span>{{ change.old|default:'Empty' }}</span></span>
+                <span class="diff-value diff-added"><i>+</i><span>{{ change.new|default:'Empty' }}</span></span>
+              </div>
+            </div>
+          {% endfor %}
+          <small>{{ log.actor|default:'System' }} · {{ log.created_at|date:'d M Y, H:i' }}</small>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty">No changes recorded.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

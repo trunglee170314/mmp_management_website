@@ -1,0 +1,6 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">WORKSPACE</p><h1>{{ title }}</h1><p>{{ subtitle }}</p></div></header>
+<section class="panel form-panel"><form method="post" class="stack-form">{% csrf_token %}{% if return_url %}<input type="hidden" name="next" value="{{ return_url }}">{% endif %}{{ form.as_p }}<div class="form-actions"><a class="button secondary" href="{% if cancel_href %}{{ cancel_href }}{% else %}{% url cancel_url %}{% endif %}">Cancel</a><button class="button primary">Save</button></div></form></section>
+{% endblock %}
