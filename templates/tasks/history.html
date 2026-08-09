@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+{% block title %}{{ task.title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">TASKS / DETAIL</p>
+    <h1>{{ task.title }}</h1>
+    <p>{{ task.scope_label }} · {{ task.assignee|default:'Unassigned' }} · {{ task.get_status_display }}</p>
+  </div>
+  <div class="header-actions">
+    <a class="button secondary" href="{{ task.link_url }}" target="_blank" rel="noopener">Open Link ↗</a>
+    {% if not task.is_archived %}<a class="button primary" href="{% url 'task_edit' task.pk %}?next={{ return_url|urlencode }}">Edit Task</a>{% endif %}
+  </div>
+</header>
+
+<section class="panel task-actions-panel">
+    <div class="panel-head">
+      <div><h2>Action Items</h2></div>
+    </div>
+    {% if not task.is_archived and user.account_status == 'active' %}
+      <form class="task-action-add-form" data-task-action-add action="{% url 'task_action_add' task.pk %}" method="post">
+        {% csrf_token %}
+        <input name="new_action_item" maxlength="300" placeholder="What needs to happen next?" required aria-label="New Action Item">
+        <select name="action_assignee" aria-label="Action Item assignee">
+          <option value="">Task assignee</option>
+          {% for member in active_users %}<option value="{{ member.pk }}">{{ member.display_name }}</option>{% endfor %}
+        </select>
+        <input type="date" name="action_due_date" aria-label="Action Item due date">
+        <button class="button primary" type="submit">+ Add</button>
+        <span data-task-action-status role="status" aria-live="polite"></span>
+      </form>
+    {% endif %}
+    <div class="compact-list" data-action-list data-empty-message="No action items yet.">
+      {% for item in actions %}
+        <div class="check-row task-action-row {% if item.is_completed %}completed-row{% endif %} {% if item.is_cancelled %}cancelled-row{% endif %}" data-action-row data-task-action-row data-remove-on-complete="false" data-edit-url="{% url 'task_action_update' task.pk item.pk %}" data-cancel-url="{% url 'task_action_cancel' task.pk item.pk %}">
+          {% if item.can_toggle %}<form method="post" action="{% url 'action_item_toggle' item.pk %}" data-global-action-toggle>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'task_history' task.pk %}">
+            <button type="button" class="round-check {% if item.is_completed %}checked{% endif %}" aria-label="{% if item.is_completed %}Reopen{% else %}Complete{% endif %} action item" title="{% if item.is_completed %}Reopen{% else %}Mark as completed{% endif %}">{% if item.is_completed %}✓{% endif %}</button>
+          </form>{% else %}<span class="round-check {% if item.is_completed %}checked{% endif %}" aria-hidden="true">{% if item.is_cancelled %}×{% elif item.is_completed %}✓{% endif %}</span>{% endif %}
+          <div class="task-action-copy">
+            <strong>{{ item.content }}</strong>
+            <small><span>{{ item.assignee|default:'Unassigned' }}{% if item.due_date %} · Due {{ item.due_date|date:'d M Y' }}{% endif %}{% if item.meeting %} · {{ item.meeting.title }} · {{ item.meeting.meeting_date|date:'d M Y' }}{% elif item.source_meeting_title %} · {{ item.source_meeting_title }} · {{ item.source_meeting_date|date:'d M Y' }} (MM deleted){% else %} · Added from Task{% endif %}</span><span data-action-completion-meta data-inline-completion="true" {% if not item.completed_at %}hidden{% endif %}>{% if item.completed_at %} · Completed {{ item.completed_at|date:'d M Y' }}{% endif %}</span>{% if item.is_cancelled %}<span> · Cancelled by {{ item.cancelled_by|default:'System' }} · {{ item.cancelled_at|date:'d M Y' }}</span>{% endif %}</small>
+          </div>
+          {% if not task.is_archived and user.account_status == 'active' %}
+            <div class="task-action-controls">
+              <button type="button" data-task-action-edit>Edit</button>
+              <button type="button" class="{% if not item.is_cancelled %}text-danger{% endif %}" data-task-action-cancel>{% if item.is_cancelled %}Restore{% else %}Cancel{% endif %}</button>
+            </div>
+            <form class="task-action-edit-form" data-task-action-edit-form hidden>
+              {% csrf_token %}
+              <input name="content" maxlength="300" value="{{ item.content }}" required aria-label="Action Item content">
+              <select name="assignee" aria-label="Action Item assignee">
+                <option value="">Unassigned</option>
+                {% for member in active_users %}<option value="{{ member.pk }}" {% if item.assignee_id == member.pk %}selected{% endif %}>{{ member.display_name }}</option>{% endfor %}
+              </select>
+              <input type="date" name="due_date" value="{{ item.due_date|date:'Y-m-d' }}" aria-label="Action Item due date">
+              <button class="button primary mini" type="submit">Save</button>
+              <button class="button secondary mini" type="button" data-task-action-edit-cancel>Close</button>
+              <span data-task-action-status role="status" aria-live="polite"></span>
+            </form>
+          {% endif %}
+        </div>
+      {% empty %}
+        <div class="empty" data-action-empty>No action items yet.</div>
+      {% endfor %}
+    </div>
+</section>
+
+{% if task.description %}
+<section class="panel task-description-panel">
+  <div class="panel-head"><div><h2>Description</h2></div></div>
+  <div class="task-description-copy">{{ task.description|linebreaksbr }}</div>
+</section>
+{% endif %}
+
+<section class="task-relations-grid">
+  <article class="panel relation-panel">
+    <div class="panel-head"><div><h2>Parent Task</h2></div></div>
+    <div class="relation-list">{% if task.parent_task %}<a href="{% url 'task_history' task.parent_task.pk %}"><strong>{{ task.parent_task.title }}</strong><span class="status {{ task.parent_task.status }}">{{ task.parent_task.get_status_display }}</span></a>{% else %}<p class="muted">This is a top-level task.</p>{% endif %}</div>
+  </article>
+  <article class="panel relation-panel">
+    <div class="panel-head"><div><h2>Subtasks</h2></div></div>
+    <div class="relation-list">{% for child in subtasks %}<a href="{% url 'task_history' child.pk %}"><span><strong>{{ child.title }}</strong><small>{{ child.assignee|default:'Unassigned' }} · {{ child.due_date|date:'d M Y'|default:'No due date' }}</small></span><span class="status {{ child.status }}">{{ child.get_status_display }}</span></a>{% empty %}<p class="muted">No subtasks.</p>{% endfor %}</div>
+  </article>
+  <article class="panel relation-panel">
+    <div class="panel-head"><div><h2>Related Tasks</h2></div></div>
+    <div class="relation-list">{% for related in related_tasks %}<a href="{% url 'task_history' related.pk %}"><span><strong>{{ related.title }}</strong><small>{{ related.assignee|default:'Unassigned' }}</small></span><span class="status {{ related.status }}">{{ related.get_status_display }}</span></a>{% empty %}<p class="muted">No related tasks.</p>{% endfor %}</div>
+  </article>
+</section>
+
+<section class="panel history-panel task-history-panel">
+  <div class="panel-head">
+    <div><h2>Change History</h2></div>
+  </div>
+  <div class="timeline history-timeline">
+    {% for item in history %}
+      <div class="timeline-item history-{{ item.change_kind }}">
+        <span></span>
+        <div>
+          <div class="history-event-heading">
+            <strong>{{ item.event }}</strong>
+            {% if item.change_kind == 'added' %}<span class="history-kind added">Added</span>{% endif %}
+            {% if item.change_kind == 'removed' %}<span class="history-kind removed">Removed</span>{% endif %}
+          </div>
+          {% if item.old_value or item.new_value %}
+            <div class="history-diff-values">
+              <span class="diff-value diff-removed"><i>−</i><span>{{ item.old_value|default:'Empty' }}</span></span>
+              <span class="diff-value diff-added"><i>+</i><span>{{ item.new_value|default:'Empty' }}</span></span>
+            </div>
+          {% endif %}
+          {% if item.note %}<blockquote>{{ item.note }}</blockquote>{% endif %}
+          <small>{{ item.actor|default:'System' }} · {{ item.created_at|date:'d M Y, H:i' }}</small>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty">No history recorded.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

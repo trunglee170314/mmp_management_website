@@ -1,0 +1,86 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-theme-preference="{% if user.is_authenticated %}{{ user.theme_preference }}{% else %}auto{% endif %}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f5f7f2">
+  <script src="{% static 'core/theme-bootstrap.js' %}?v=1"></script>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const preference = window.MMPTheme.normalizePreference(root.dataset.themePreference || 'auto');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const theme = window.MMPTheme.resolveTheme(preference, new Date(), prefersDark);
+      root.dataset.themePreference = preference;
+      root.dataset.theme = theme;
+      root.style.colorScheme = theme === 'evening' ? 'dark' : 'light';
+      document.querySelector('meta[name="theme-color"]').content = window.MMPTheme.themeColors[theme];
+    })();
+  </script>
+  <title>{% block title %}MMP management{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'core/styles.css' %}?v=12">
+  <link rel="stylesheet" href="{% static 'core/task-filters.css' %}?v=16">
+  <link rel="stylesheet" href="{% static 'core/board-management.css' %}?v=4">
+  <link rel="stylesheet" href="{% static 'core/table-safety.css' %}?v=1">
+  <link rel="stylesheet" href="{% static 'core/history-diff.css' %}?v=1">
+  <link rel="stylesheet" href="{% static 'core/meeting-controls.css' %}?v=17">
+  <link rel="stylesheet" href="{% static 'core/checklist.css' %}?v=3">
+  <link rel="stylesheet" href="{% static 'core/dashboard.css' %}?v=14">
+  <link rel="stylesheet" href="{% static 'core/partial-navigation.css' %}?v=2">
+  <link rel="stylesheet" href="{% static 'core/interaction-enhancements.css' %}?v=8">
+  {% block styles %}{% endblock %}
+  <link rel="stylesheet" href="{% static 'core/theme.css' %}?v=3">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+{% if user.is_authenticated %}
+  <aside class="sidebar no-print">
+    <a class="brand" href="{% url 'dashboard' %}"><span>MMP</span><strong>management</strong></a>
+    <nav>
+      <a href="{% url 'dashboard' %}" class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="{% url 'tasks' %}" class="{% if 'task' in request.resolver_match.url_name or request.resolver_match.url_name == 'scopes' %}active{% endif %}">Tasks</a>
+      <a href="{% url 'boards' %}" class="{% if request.resolver_match.url_name == 'boards' or 'board_' in request.resolver_match.url_name %}active{% endif %}">Boards</a>
+      <a href="{% url 'meetings' %}" class="{% if 'meeting' in request.resolver_match.url_name %}active{% endif %}">Meeting Minutes</a>
+      <a href="{% url 'relationship_map' %}" class="{% if request.resolver_match.url_name == 'relationship_map' %}active{% endif %}">System Map</a>
+      <a href="{% url 'help' %}" class="{% if request.resolver_match.url_name == 'help' or request.resolver_match.url_name == 'release_notes' %}active{% endif %}">Help</a>
+      {% if user.is_admin %}
+      <a href="{% url 'users' %}" class="{% if request.resolver_match.url_name == 'users' or 'user_' in request.resolver_match.url_name or 'password_reset_' in request.resolver_match.url_name %}active{% endif %}">Users {% if pending_request_count %}<b class="nav-count">{{ pending_request_count }}</b>{% endif %}</a>
+      {% endif %}
+    </nav>
+    <div class="sidebar-user">
+      <span class="sidebar-avatar" aria-hidden="true">{{ user.display_name|default:user.username|slice:":1"|upper }}</span>
+      <div><strong>{{ user.display_name|default:user.username }}</strong><small>{{ user.get_role_display }} · v{{ app_version }}</small></div>
+      <button class="plain popover-trigger" aria-label="Account menu">•••</button>
+      <div class="account-menu">
+        <a href="{% url 'profile' %}">My Profile</a>
+        <a href="{% url 'help' %}">User Guide</a>
+        <a href="{% url 'release_notes' %}">Release Notes · v{{ app_version }}</a>
+        <div class="appearance-picker" data-theme-picker data-save-url="{% url 'theme_preference' %}">
+          <strong>Appearance</strong>
+          <div role="radiogroup" aria-label="Appearance">
+            <button type="button" role="radio" data-theme-choice="auto" aria-label="Automatic appearance" aria-checked="{% if user.theme_preference == 'auto' %}true{% else %}false{% endif %}" tabindex="{% if user.theme_preference == 'auto' %}0{% else %}-1{% endif %}" title="Automatic"><span class="theme-swatch theme-swatch-auto" aria-hidden="true"></span></button>
+            <button type="button" role="radio" data-theme-choice="morning" aria-label="Morning appearance" aria-checked="{% if user.theme_preference == 'morning' %}true{% else %}false{% endif %}" tabindex="{% if user.theme_preference == 'morning' %}0{% else %}-1{% endif %}" title="Morning"><span class="theme-swatch theme-swatch-morning" aria-hidden="true"></span></button>
+            <button type="button" role="radio" data-theme-choice="midday" aria-label="Midday appearance" aria-checked="{% if user.theme_preference == 'midday' %}true{% else %}false{% endif %}" tabindex="{% if user.theme_preference == 'midday' %}0{% else %}-1{% endif %}" title="Midday"><span class="theme-swatch theme-swatch-midday" aria-hidden="true"></span></button>
+            <button type="button" role="radio" data-theme-choice="afternoon" aria-label="Afternoon appearance" aria-checked="{% if user.theme_preference == 'afternoon' %}true{% else %}false{% endif %}" tabindex="{% if user.theme_preference == 'afternoon' %}0{% else %}-1{% endif %}" title="Afternoon"><span class="theme-swatch theme-swatch-afternoon" aria-hidden="true"></span></button>
+            <button type="button" role="radio" data-theme-choice="evening" aria-label="Evening appearance" aria-checked="{% if user.theme_preference == 'evening' %}true{% else %}false{% endif %}" tabindex="{% if user.theme_preference == 'evening' %}0{% else %}-1{% endif %}" title="Evening"><span class="theme-swatch theme-swatch-evening" aria-hidden="true"></span></button>
+          </div>
+          <span class="appearance-status" role="status" aria-live="polite"></span>
+        </div>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button>Sign Out</button></form>
+      </div>
+    </div>
+  </aside>
+  <button type="button" class="sidebar-collapse-toggle no-print" data-sidebar-collapse aria-expanded="true" aria-label="Collapse navigation" title="Collapse navigation"><span aria-hidden="true">‹</span></button>
+{% endif %}
+  <main id="main-content" tabindex="-1" class="{% if user.is_authenticated %}app-main{% else %}auth-main{% endif %}">
+    {% if messages %}<div class="messages no-print" role="status" aria-live="polite">{% for message in messages %}<div class="message {{ message.tags }}">{{ message }}</div>{% endfor %}</div>{% endif %}
+    {% block content %}{% endblock %}
+  </main>
+  <script src="{% static 'core/theme.js' %}?v=2"></script>
+  <script src="{% static 'core/app.js' %}?v=39"></script>
+  <script src="{% static 'core/partial-navigation.js' %}?v=3"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

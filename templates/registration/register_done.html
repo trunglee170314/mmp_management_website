@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Request Submitted · MMP management{% endblock %}
+{% block body_class %}auth-page login-redesign{% endblock %}
+{% block content %}
+<section class="login-shell reset-shell">
+  <div class="login-wordmark">MMP WORKSPACE</div>
+  <div class="reset-success">✓</div>
+  <h1>Request submitted</h1>
+  <p class="reset-intro">Your account is awaiting Admin approval. You can sign in after it has been approved.</p>
+  <a class="login-submit reset-login-link" href="{% url 'login' %}">Back to Sign In</a>
+  <p class="login-network"><i></i>Local network workspace</p>
+</section>
+{% endblock %}

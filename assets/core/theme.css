@@ -1,0 +1,859 @@
+/* Shared time-based design system. This file intentionally loads after page styles. */
+:root {
+  --bg: #f5f7f2;
+  --paper: #ffffff;
+  --paper-soft: #fbfcf8;
+  --paper-muted: #f0f4ef;
+  --control-bg: #ffffff;
+  --control-hover: #edf4ef;
+  --ink: #17221d;
+  --muted: #617068;
+  --line: #dce3da;
+  --line-strong: #bdc9c0;
+  --violet: #356b57;
+  --violet-dark: #285542;
+  --on-accent: #ffffff;
+  --green: #176b4a;
+  --red: #a9363a;
+  --amber: #80500f;
+  --blue: #245f8d;
+  --sidebar: #fbfcf8;
+  --sidebar-ink: #26332d;
+  --sidebar-muted: #617068;
+  --sidebar-active: #e4ede7;
+  --focus-ring: #356b57;
+  --shadow: 0 8px 26px rgba(20, 57, 43, .055);
+}
+
+html[data-theme="midday"] {
+  --bg: #f4f8f4;
+  --paper: #ffffff;
+  --paper-soft: #f8fcf9;
+  --paper-muted: #eaf4ee;
+  --control-bg: #ffffff;
+  --control-hover: #e3f2eb;
+  --ink: #13241f;
+  --muted: #596d64;
+  --line: #d4e3da;
+  --line-strong: #aac5b6;
+  --violet: #08736d;
+  --violet-dark: #075e59;
+  --on-accent: #ffffff;
+  --green: #146b49;
+  --red: #a9343b;
+  --amber: #80500f;
+  --blue: #245f8d;
+  --sidebar: #f7fbf8;
+  --sidebar-ink: #183029;
+  --sidebar-muted: #596d64;
+  --sidebar-active: #dcf0e8;
+  --focus-ring: #08736d;
+  --shadow: 0 8px 26px rgba(16, 73, 58, .06);
+}
+
+html[data-theme="afternoon"] {
+  --bg: #f7f1e7;
+  --paper: #fffdf9;
+  --paper-soft: #fcf7ef;
+  --paper-muted: #f1e4d4;
+  --control-bg: #fffaf3;
+  --control-hover: #f5e6d5;
+  --ink: #2e241d;
+  --muted: #6e5a4e;
+  --line: #e4d5c3;
+  --line-strong: #cbb199;
+  --violet: #8c3f24;
+  --violet-dark: #71311c;
+  --on-accent: #ffffff;
+  --green: #3f6b49;
+  --red: #a93431;
+  --amber: #80500f;
+  --blue: #3f638e;
+  --sidebar: #fbf6ed;
+  --sidebar-ink: #38291f;
+  --sidebar-muted: #6e5a4e;
+  --sidebar-active: #f0dfce;
+  --focus-ring: #8c3f24;
+  --shadow: 0 8px 26px rgba(83, 49, 28, .065);
+}
+
+html[data-theme="evening"],
+html[data-theme="dark"] {
+  --bg: #0f1726;
+  --paper: #182438;
+  --paper-soft: #142033;
+  --paper-muted: #202e43;
+  --control-bg: #17253a;
+  --control-hover: #22344c;
+  --ink: #f3f6fa;
+  --muted: #9eadc0;
+  --line: #2b3b52;
+  --line-strong: #40546f;
+  --violet: #7fb2dc;
+  --violet-dark: #9fc8e8;
+  --on-accent: #0f1726;
+  --green: #55c795;
+  --red: #f57d84;
+  --amber: #e7aa56;
+  --blue: #7fb2dc;
+  --sidebar: #172337;
+  --sidebar-ink: #f3f6fa;
+  --sidebar-muted: #a3b1c2;
+  --sidebar-active: #243b57;
+  --focus-ring: #7fb2dc;
+  --shadow: 0 12px 34px rgba(0, 0, 0, .18);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
+select,
+textarea {
+  border-color: var(--line-strong);
+  background: var(--control-bg);
+  color: var(--ink);
+}
+
+/* Match class-based legacy control rules without forcing colors with !important. */
+select:not([multiple]),
+.order-form select,
+.meeting-form-panel select:disabled {
+  background: var(--control-bg);
+  color: var(--ink);
+}
+
+.meeting-form-panel select:disabled {
+  background: var(--paper-muted);
+  color: var(--muted);
+}
+
+select option,
+select optgroup {
+  background: var(--control-bg);
+  color: var(--ink);
+}
+
+body,
+.sidebar,
+.panel,
+.metric,
+.account-menu,
+input,
+select,
+textarea,
+button,
+dialog {
+  transition: background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--violet) 28%, transparent);
+}
+
+input,
+select,
+textarea {
+  color-scheme: light;
+}
+
+html[data-theme="evening"] input,
+html[data-theme="evening"] select,
+html[data-theme="evening"] textarea,
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color-scheme: dark;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--muted);
+  opacity: .8;
+}
+
+/* Application shell */
+.sidebar {
+  border-right: 1px solid var(--line);
+  background: var(--sidebar);
+  color: var(--sidebar-ink);
+}
+
+.brand {
+  color: var(--sidebar-ink);
+}
+
+.brand > span,
+.auth-brand > span {
+  background: var(--violet);
+  color: var(--on-accent);
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--violet) 20%, transparent);
+}
+
+.sidebar nav > a {
+  color: var(--sidebar-muted);
+}
+
+.sidebar nav > a:hover,
+.sidebar nav > a.active {
+  background: var(--sidebar-active);
+  color: var(--sidebar-ink);
+}
+
+.sidebar nav > a.active {
+  font-weight: 800;
+}
+
+.sidebar-user {
+  border-color: var(--line);
+}
+
+.sidebar-user strong {
+  color: var(--sidebar-ink);
+}
+
+.sidebar-user small,
+.sidebar-user .plain {
+  color: var(--sidebar-muted);
+}
+
+.sidebar-avatar {
+  width: 34px;
+  height: 34px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--violet);
+  color: var(--on-accent);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.account-menu {
+  padding: 7px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 18px 48px rgba(4, 20, 32, .22);
+}
+
+.account-menu a,
+.account-menu button {
+  color: var(--ink);
+}
+
+.account-menu a:hover,
+.account-menu button:hover {
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.appearance-picker {
+  margin: 4px 0;
+  padding: 9px 7px 8px;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.appearance-picker > strong {
+  display: block;
+  margin: 0 2px 7px;
+  color: var(--muted);
+  font-size: 10px;
+  letter-spacing: .55px;
+  text-transform: uppercase;
+}
+
+.appearance-picker > div {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 5px;
+}
+
+.account-menu .appearance-picker button {
+  min-width: 0;
+  padding: 7px 3px;
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.theme-swatch {
+  width: 19px;
+  height: 19px;
+  border: 2px solid var(--paper);
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px var(--line-strong);
+}
+
+.theme-swatch-auto {
+  background: conic-gradient(#356b57 0 25%, #0f8982 0 50%, #ad4f2d 0 75%, #58bde8 0);
+}
+
+.theme-swatch-morning {
+  background: #769f82;
+}
+
+.theme-swatch-midday {
+  background: #0f8982;
+}
+
+.theme-swatch-afternoon {
+  background: #ad4f2d;
+}
+
+.theme-swatch-evening {
+  background: #58bde8;
+}
+
+.account-menu .appearance-picker button[aria-checked="true"] {
+  border-color: color-mix(in srgb, var(--violet) 48%, var(--line));
+  background: color-mix(in srgb, var(--violet) 13%, var(--paper));
+  color: var(--violet);
+}
+
+.account-menu .appearance-picker button:disabled {
+  cursor: wait;
+  opacity: .72;
+}
+
+.appearance-status {
+  display: block;
+  min-height: 11px;
+  margin: 4px 2px -3px;
+  color: var(--muted);
+  font-size: 9px;
+  text-align: right;
+}
+
+.sidebar-collapse-toggle {
+  border-color: var(--bg);
+  background: var(--violet);
+  color: var(--on-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--violet) 24%, transparent);
+}
+
+.sidebar-collapse-toggle:hover,
+.sidebar-collapse-toggle:focus-visible {
+  background: var(--violet-dark);
+}
+
+/* Shared surfaces and controls */
+.panel,
+.metric,
+.meeting-progress,
+.meeting-nav,
+.task-view-buttons,
+.dashboard-mode-switch {
+  border-color: var(--line);
+  background: var(--paper);
+  box-shadow: var(--shadow);
+}
+
+.panel-head,
+.minute-section,
+.task-sequence,
+.profile-card dl > div,
+.check-row,
+.meeting-mini-list > a,
+.simple-list > a,
+.timeline-item,
+td,
+th,
+.scope-legend a,
+.board-legend-row,
+.attention-item,
+.responsibility-counts > div {
+  border-color: var(--line);
+}
+
+.button.primary,
+.button.secondary,
+.button.secondary.timeline-entry-button,
+.row-actions a,
+.row-actions button,
+.scope-actions a,
+.scope-actions button,
+.review-choice {
+  border-color: var(--line-strong);
+  background: var(--control-bg);
+  color: var(--ink);
+  box-shadow: none;
+}
+
+.button.primary:hover,
+.button.secondary:hover,
+.button.secondary.timeline-entry-button:hover,
+.row-actions a:hover,
+.row-actions button:hover,
+.scope-actions a:hover,
+.scope-actions button:hover,
+.review-choice:hover {
+  border-color: var(--violet);
+  background: var(--control-hover);
+  color: var(--violet-dark);
+}
+
+:is(html[data-theme="evening"], html[data-theme="dark"]) .button.primary:hover,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .button.secondary:hover,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .row-actions a:hover,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .row-actions button:hover,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .scope-actions a:hover,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .scope-actions button:hover {
+  color: var(--ink);
+}
+
+.button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.button.primary.text-danger,
+.button.secondary.text-danger,
+.button.back-button,
+.row-actions .text-danger,
+.scope-actions .text-danger {
+  border-color: color-mix(in srgb, var(--red) 45%, var(--line));
+  background: color-mix(in srgb, var(--red) 8%, var(--paper));
+  color: var(--red) !important;
+}
+
+.toolbar select,
+.toolbar input,
+.stack-form input,
+.stack-form select,
+.stack-form textarea,
+.meeting-entry-form textarea,
+.meeting-entry-form input,
+.meeting-entry-form select,
+.progress-autosave textarea,
+.action-item-autosave-form input,
+.action-item-autosave-form select,
+.inline-action-edit input,
+.inline-action-edit select,
+.host-review-controls select,
+.analytics-filters select,
+.timeline-toolbar select,
+.timeline-form-grid input,
+.timeline-form-grid select,
+.timeline-manager-add input,
+.timeline-manager-edit input:not([type="color"]),
+.timeline-holiday-add input:not([type="checkbox"]),
+.timeline-holiday-edit input:not([type="checkbox"]),
+.timeline-milestone-add input:not([type="checkbox"]),
+.timeline-milestone-add select,
+.timeline-milestone-edit input:not([type="checkbox"]),
+.timeline-milestone-edit select,
+.timeline-row-limit,
+.timeline-row-limit select,
+.timeline-zoom-controls,
+.timeline-zoom-controls button {
+  border-color: var(--line-strong);
+  background: var(--control-bg);
+  color: var(--ink);
+}
+
+.toolbar select:focus,
+.toolbar input:focus,
+.stack-form input:focus,
+.stack-form select:focus,
+.stack-form textarea:focus,
+.meeting-entry-form textarea:focus,
+.meeting-entry-form input:focus,
+.meeting-entry-form select:focus,
+.progress-autosave textarea:focus,
+.action-item-autosave-form input:focus,
+.action-item-autosave-form select:focus,
+.inline-action-edit input:focus,
+.inline-action-edit select:focus {
+  border-color: var(--violet);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+.search-field,
+.multi-filter > summary,
+.multi-filter-menu,
+.board-overflow-menu,
+.board-picker-toggle,
+.board-picker-options,
+.board-picker-search,
+.board-picker-options > div > div label,
+.single-task-option,
+.inline-add > form,
+.field-boards > div > div label {
+  border-color: var(--line);
+  background: var(--control-bg);
+  color: var(--ink);
+}
+
+.multi-filter-menu label:hover,
+.board-picker-options > div > div label:hover,
+.single-task-option:hover,
+.single-task-option.is-selected,
+.field-boards > div > div label:hover {
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.active-filter-strip,
+.pagination,
+.field-boards > div,
+.inline-action-edit,
+.writer-order-row,
+.timeline-manager-add,
+.timeline-holiday-add,
+.timeline-milestone-add {
+  border-color: var(--line);
+  background: var(--paper-soft);
+  color: var(--ink);
+}
+
+table,
+.table-panel {
+  background: var(--paper);
+}
+
+th,
+.member-summary-scroll thead th {
+  background: var(--paper-soft);
+  color: var(--muted);
+}
+
+tbody tr:hover td {
+  background: color-mix(in srgb, var(--violet) 5%, var(--paper));
+}
+
+.pending-row,
+.member-summary-table tr.selected-member td {
+  background: color-mix(in srgb, var(--violet) 9%, var(--paper));
+}
+
+.tag,
+.board-tag,
+.user-chip,
+.avatar,
+.date-box,
+.timeline-count,
+.multi-filter > summary span,
+.writer-position {
+  background: color-mix(in srgb, var(--violet) 12%, var(--paper));
+  color: var(--violet);
+}
+
+.tag i {
+  box-shadow: 0 0 0 2px var(--paper);
+}
+
+.round-check,
+.meeting-page .round-check {
+  border-color: var(--line-strong);
+  background: var(--control-bg);
+  box-shadow: inset 0 0 0 2px var(--control-bg);
+}
+
+.bar-track,
+.progress-track {
+  background: var(--paper-muted);
+}
+
+.status.todo,
+.status.pending,
+.status.inactive {
+  background: var(--paper-muted);
+  color: var(--muted);
+}
+
+.status.in_progress,
+.status.draft {
+  background: color-mix(in srgb, var(--blue) 17%, var(--paper));
+  color: var(--blue);
+}
+
+.status.paused,
+.priority.medium {
+  background: color-mix(in srgb, var(--amber) 16%, var(--paper));
+  color: var(--amber);
+}
+
+.status.done,
+.status.active,
+.status.finalized,
+.priority.low {
+  background: color-mix(in srgb, var(--green) 15%, var(--paper));
+  color: var(--green);
+}
+
+.status.cancelled,
+.status.rejected,
+.priority.high {
+  background: color-mix(in srgb, var(--red) 14%, var(--paper));
+  color: var(--red);
+}
+
+.notice {
+  border-color: color-mix(in srgb, var(--violet) 34%, var(--line));
+  background: color-mix(in srgb, var(--violet) 10%, var(--paper));
+  color: var(--ink);
+}
+
+.notice span,
+.timeline-item p,
+.task-sequence-title,
+.row-actions a,
+.row-actions button {
+  color: var(--muted);
+}
+
+.timeline-item blockquote {
+  background: color-mix(in srgb, var(--amber) 12%, var(--paper));
+  color: var(--ink);
+}
+
+/* Dashboard */
+.dashboard-mode-switch a,
+.task-view-buttons .button {
+  color: var(--muted);
+}
+
+.dashboard-mode-switch a:hover,
+.task-view-buttons .button.secondary:hover {
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.dashboard-mode-switch a.active,
+.task-view-buttons .button.primary,
+.task-view-buttons .button.primary:hover {
+  background: var(--violet);
+  color: var(--on-accent);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--violet) 24%, transparent);
+}
+
+.metric-grid .metric {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--metric-color) 8%, var(--paper)), var(--paper) 72%);
+}
+
+.analytics-chart-head,
+.board-availability-stat {
+  border-color: var(--line);
+  background: var(--paper-soft);
+}
+
+.scope-pie::after,
+.board-pie::after {
+  background: var(--paper);
+  box-shadow: 0 0 0 1px var(--line), 0 8px 26px rgba(0, 0, 0, .08);
+}
+
+.attention-count {
+  background: var(--paper-muted);
+  color: var(--ink);
+}
+
+.attention-item.danger .attention-count,
+.member-summary-table .attention-number a {
+  background: color-mix(in srgb, var(--red) 12%, var(--paper));
+  color: var(--red);
+}
+
+.attention-item.warning .attention-count {
+  background: color-mix(in srgb, var(--amber) 14%, var(--paper));
+  color: var(--amber);
+}
+
+.attention-item.success .attention-count {
+  background: color-mix(in srgb, var(--green) 13%, var(--paper));
+  color: var(--green);
+}
+
+/* Meeting workspace and dialogs */
+.meeting-task-dialog,
+.meeting-task-dialog-head,
+.timeline-dialog-card {
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.meeting-task-dialog-head button,
+.timeline-dialog-head > button {
+  background: var(--paper-muted);
+  color: var(--ink);
+}
+
+.meeting-nav a > span {
+  background: var(--paper-muted);
+  color: var(--ink);
+}
+
+.meeting-nav a.reviewed > span {
+  background: color-mix(in srgb, var(--green) 15%, var(--paper));
+  color: var(--green);
+}
+
+.meeting-nav a.no_update > span,
+.meeting-nav a.skipped > span {
+  background: color-mix(in srgb, var(--amber) 16%, var(--paper));
+  color: var(--amber);
+}
+
+.meeting-nav a[aria-current="true"] > span {
+  box-shadow: 0 0 0 2px var(--violet);
+}
+
+.host-role {
+  background: color-mix(in srgb, var(--blue) 16%, var(--paper));
+  color: var(--blue);
+}
+
+.taker-role {
+  background: color-mix(in srgb, var(--green) 14%, var(--paper));
+  color: var(--green);
+}
+
+.review-choice.active.pending,
+.review-choice.active.reviewed,
+.review-choice.active.no_update,
+.review-choice.active.skipped {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: var(--on-accent);
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--violet) 22%, transparent);
+}
+
+.meeting-pane-resizer::after {
+  background: var(--line-strong);
+}
+
+.meeting-pane-resizer:hover::after,
+.meeting-pane-resizer:focus-visible::after {
+  background: var(--violet);
+}
+
+/* Timeline */
+.timeline-sticky,
+.timeline-track-day,
+.timeline-dialog-card,
+.timeline-settings-popover,
+.timeline-scope-options.compact,
+.timeline-scope-options.compact legend {
+  border-color: var(--line);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.timeline-day-label,
+.timeline-group-heading,
+.timeline-month-grid,
+.timeline-year-grid,
+.timeline-year-label,
+.timeline-active-year,
+.timeline-milestone-empty-lane {
+  border-color: var(--line);
+  background: var(--paper-soft);
+  color: var(--muted);
+}
+
+.timeline-day-label.is-weekend,
+.timeline-track-day.is-weekend {
+  background: var(--paper-muted);
+}
+
+.timeline-day-label.is-today,
+.timeline-track-day.is-today {
+  background: color-mix(in srgb, var(--red) 10%, var(--paper));
+}
+
+.timeline-settings-popover button {
+  color: var(--ink);
+}
+
+.timeline-settings-popover button:hover,
+.timeline-settings-popover button:focus-visible,
+.timeline-zoom-controls button:hover:not(:disabled) {
+  background: var(--control-hover);
+  color: var(--ink);
+}
+
+.timeline-scroll {
+  scrollbar-color: var(--line-strong) var(--paper-muted);
+}
+
+/* Authentication remains readable when the OS is dark before login. */
+:is(html[data-theme="evening"], html[data-theme="dark"]) .login-redesign,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .auth-page {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+:is(html[data-theme="evening"], html[data-theme="dark"]) .login-shell > h1,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .login-form > label,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .register-field label {
+  color: var(--ink);
+}
+
+:is(html[data-theme="evening"], html[data-theme="dark"]) .login-form > input,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .password-field,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .register-field input,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .register-field textarea,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .auth-card {
+  border-color: var(--line-strong);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+:is(html[data-theme="evening"], html[data-theme="dark"]) .login-submit {
+  border-color: var(--violet);
+  background: var(--violet);
+  color: var(--on-accent);
+}
+
+:is(html[data-theme="evening"], html[data-theme="dark"]) .login-register a,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .back-to-login,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .password-help a,
+:is(html[data-theme="evening"], html[data-theme="dark"]) .register-login-link a {
+  border-color: var(--violet);
+  color: var(--violet);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body,
+  .sidebar,
+  .panel,
+  .metric,
+  .account-menu,
+  input,
+  select,
+  textarea,
+  button,
+  dialog {
+    transition: none;
+  }
+}
+
+@media print {
+  :root,
+  html[data-theme="evening"],
+  html[data-theme="dark"] {
+    --bg: #fff;
+    --paper: #fff;
+    --paper-soft: #fff;
+    --ink: #111;
+    --muted: #555;
+    --line: #bbb;
+  }
+}

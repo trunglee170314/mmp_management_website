@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}Request Access · MMP management{% endblock %}
+{% block body_class %}auth-page login-redesign{% endblock %}
+{% block content %}
+<section class="login-shell register-shell">
+  <div class="login-wordmark">MMP WORKSPACE</div>
+  <h1>Request access</h1>
+
+  <form method="post" class="register-form" data-password-check-url="{% url 'registration_password_check' %}">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="login-error" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="register-field">
+      <label for="{{ form.display_name.id_for_label }}">Full Name</label>
+      {{ form.display_name }}
+      {% for error in form.display_name.errors %}<span class="login-field-error">{{ error }}</span>{% endfor %}
+    </div>
+
+    <div class="register-field">
+      <label for="{{ form.username.id_for_label }}">Username</label>
+      {{ form.username }}
+      {% for error in form.username.errors %}<span class="login-field-error">{{ error }}</span>{% endfor %}
+    </div>
+
+    <div class="register-field">
+      <label for="{{ form.email.id_for_label }}">Email <span>(Optional)</span></label>
+      {{ form.email }}
+      {% for error in form.email.errors %}<span class="login-field-error">{{ error }}</span>{% endfor %}
+    </div>
+
+    <div class="register-field">
+      <label for="{{ form.password1.id_for_label }}">Password</label>
+      {{ form.password1 }}
+      {% for error in form.password1.errors %}<span class="login-field-error">{{ error }}</span>{% endfor %}
+    </div>
+
+    <ul id="password-rules" class="password-rules" aria-live="polite">
+      <li data-rule="similarity"><i>×</i><span>Your password can’t be too similar to your personal information.</span></li>
+      <li data-rule="length"><i>×</i><span>Your password must contain at least 8 characters.</span></li>
+      <li data-rule="common"><i>×</i><span>Your password can’t be a commonly used password.</span></li>
+      <li data-rule="numeric"><i>×</i><span>Your password can’t be entirely numeric.</span></li>
+    </ul>
+
+    <div class="register-field">
+      <label for="{{ form.password2.id_for_label }}">Password Confirmation</label>
+      {{ form.password2 }}
+      {% for error in form.password2.errors %}<span class="login-field-error">{{ error }}</span>{% endfor %}
+    </div>
+
+    <div class="register-field">
+      <label for="{{ form.request_note.id_for_label }}">Request Note <span>(Optional)</span></label>
+      {{ form.request_note }}
+      {% for error in form.request_note.errors %}<span class="login-field-error">{{ error }}</span>{% endfor %}
+    </div>
+
+    <button class="login-submit" type="submit">Submit Registration</button>
+  </form>
+  <p class="register-login-link">Already registered? <a href="{% url 'login' %}">Back to Log in</a></p>
+  <p class="login-network"><i></i>Local network workspace</p>
+</section>
+{% endblock %}
