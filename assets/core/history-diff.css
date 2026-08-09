@@ -1,0 +1,125 @@
+.history-panel {
+  width: 100%;
+}
+
+.history-timeline {
+  padding: 8px 20px 12px;
+}
+
+.history-timeline .timeline-item {
+  margin: 8px 0;
+  padding: 14px 13px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.history-timeline .timeline-item:not(:last-child) {
+  border-bottom-color: transparent;
+}
+
+.history-timeline .history-added {
+  background: #f1faf5;
+  border-color: #cce9d8;
+}
+
+.history-timeline .history-removed {
+  background: #fff4f3;
+  border-color: #f1d0cd;
+}
+
+.history-timeline .history-added > span:first-child {
+  background: #16835e;
+  box-shadow: 0 0 0 4px #dcefe5;
+}
+
+.history-timeline .history-removed > span:first-child {
+  background: #c84b45;
+  box-shadow: 0 0 0 4px #f8dedb;
+}
+
+.history-event-heading {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.history-kind {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 99px;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.history-kind.added {
+  background: #dcefe5;
+  color: #0d6948;
+}
+
+.history-kind.removed {
+  background: #f8dedb;
+  color: #a83d37;
+}
+
+.history-field-diff {
+  margin-top: 10px;
+}
+
+.history-field-diff > b {
+  display: block;
+  margin-bottom: 5px;
+  color: #606962;
+  font-size: 11px;
+}
+
+.history-diff-values {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 7px;
+  margin-top: 9px;
+}
+
+.diff-value {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 6px;
+  min-width: 0;
+  border-radius: 6px;
+  padding: 7px 9px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.diff-value i {
+  font-style: normal;
+  font-weight: 900;
+}
+
+.diff-value span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.diff-removed {
+  background: #ffebe9;
+  color: #9f302b;
+}
+
+.diff-added {
+  background: #e6ffec;
+  color: #116b43;
+}
+
+@media (max-width: 760px) {
+  .history-timeline {
+    padding-right: 12px;
+    padding-left: 12px;
+  }
+
+  .history-diff-values {
+    grid-template-columns: 1fr;
+  }
+}

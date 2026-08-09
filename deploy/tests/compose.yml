@@ -1,0 +1,52 @@
+# Disposable integration fixture. Never mounts production volumes or reads .env.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: fixture
+      POSTGRES_USER: fixture
+      POSTGRES_PASSWORD: fixture-only
+    volumes: [db_data:/var/lib/postgresql/data, media_data:/fixture-media]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U fixture -d fixture]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+  backup_verify:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: backup_verify
+      POSTGRES_DB: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+    tmpfs: [/var/lib/postgresql/data]
+    networks: [verification]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -U backup_verify -d postgres]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+  backup:
+    image: postgres:16-alpine
+    entrypoint: [/bin/sh, /opt/backup-worker.sh]
+    environment: &environment
+      POSTGRES_DB: fixture
+      POSTGRES_USER: fixture
+      PGPASSWORD: fixture-only
+      BACKUP_INTERVAL_SECONDS: "86400"
+      BACKUP_RETENTION_DAYS: "30"
+    volumes: [backup_data:/backups, media_data:/media:ro, export_data:/exports, ../backup-worker.sh:/opt/backup-worker.sh:ro]
+    networks: [default, verification]
+  restore:
+    image: postgres:16-alpine
+    entrypoint: [/bin/sh, /opt/backup-worker.sh]
+    environment: *environment
+    volumes: [backup_data:/backups, media_data:/media, ../backup-worker.sh:/opt/backup-worker.sh:ro, ./fail-media-move.sh:/opt/fail-media-move.sh:ro]
+    networks: [default, verification]
+volumes:
+  db_data:
+  media_data:
+  backup_data:
+  export_data:
+networks:
+  verification:
+    internal: true

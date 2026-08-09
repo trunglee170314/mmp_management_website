@@ -1,0 +1,30 @@
+{% extends page_base_template %}
+{% block title %}System Map Trash · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><p class="eyebrow">SYSTEM MAP / TRASH</p><h1>Trash</h1></div>
+  <a class="button secondary" href="{% url 'relationship_map' %}">Back to Maps</a>
+</header>
+<section class="panel table-panel">
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Map</th><th>Deleted By</th><th>Deleted At</th><th>Permanent Deletion</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for item in deleted_maps %}
+        <tr>
+          <td><strong>{{ item.name }}</strong></td>
+          <td>{{ item.deleted_by.display_name|default:item.deleted_by.username|default:"Unknown" }}</td>
+          <td>{{ item.deleted_at|date:"d M Y, H:i" }}</td>
+          <td>{{ item.expires_at|date:"d M Y, H:i" }}</td>
+          <td><div class="row-actions">
+            <a href="{% url 'relationship_map_history' item.pk %}">History</a>
+            <form method="post" action="{% url 'relationship_map_trash_restore' item.pk %}">{% csrf_token %}<button class="text-success">Restore</button></form>
+            <form method="post" action="{% url 'relationship_map_trash_purge' item.pk %}" data-confirm="Permanently delete {{ item.name }} and all of its history? This cannot be undone.">{% csrf_token %}<button class="text-danger">Delete Permanently</button></form>
+          </div></td>
+        </tr>
+        {% empty %}<tr><td colspan="5" class="empty">Trash is empty. Deleted Maps are retained for {{ retention_days }} days.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

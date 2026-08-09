@@ -1,0 +1,93 @@
+{% extends page_base_template %}
+{% load static %}
+{% block title %}System Relationship Map · MMP management{% endblock %}
+{% block body_class %}relationship-map-page{% endblock %}
+{% block styles %}<link rel="stylesheet" href="{% static 'core/relationship-map.css' %}?v=12">{% endblock %}
+{% block content %}
+<div class="relationship-shell" data-relationship-root data-api-url="{% url 'relationship_map_api' %}" data-selected-map-id="{% if selected_map %}{{ selected_map.pk }}{% endif %}">
+  <header class="page-header relationship-header">
+    <div><p class="eyebrow">WORKSPACE / SYSTEM MAP</p><h1>System Relationship Map</h1></div>
+    <div class="header-actions">
+      <label class="map-selector"><select data-map-select aria-label="Select map" title="Select map">{% for map in relationship_maps %}<option value="{{ map.pk }}" {% if selected_map.pk == map.pk %}selected{% endif %}>{{ map.name }}</option>{% empty %}<option value="">No Maps yet</option>{% endfor %}</select></label>
+      <button type="button" class="button secondary" data-new-map>+ New Map</button>
+      {% if selected_map %}<a class="button secondary" href="{% url 'relationship_map_history' selected_map.pk %}">History</a><button type="button" class="button secondary" data-edit-map>Edit Map</button>{% endif %}
+      {% if user.is_admin %}<a class="button secondary" href="{% url 'relationship_map_trash' %}">Trash{% if trash_count %} ({{ trash_count }}){% endif %}</a>{% endif %}
+    </div>
+  </header>
+
+  {% csrf_token %}
+  {% if selected_map %}
+  <section class="relationship-toolbar panel no-print">
+    <label class="relationship-search"><span aria-hidden="true">⌕</span><input type="search" placeholder="Search nodes..." data-node-search></label>
+    <div class="relationship-toolbar-spacer"></div>
+    <select aria-label="Automatic layout" data-layout-select><option value="">Auto layout</option><option value="grid">Grid</option><option value="circle">Circle</option></select>
+    <button type="button" class="icon-button" data-zoom-out aria-label="Zoom out">−</button><span class="zoom-label" data-zoom-label>100%</span><button type="button" class="icon-button" data-zoom-in aria-label="Zoom in">+</button><button type="button" class="button secondary small-button" data-fit-map>Fit</button>
+    <div class="relationship-status" data-map-status role="status" aria-live="polite" hidden></div>
+  </section>
+
+  <section class="relationship-workspace panel">
+    <div class="relationship-viewport" data-map-viewport tabindex="0" aria-label="Relationship map canvas">
+      <div class="relationship-surface" data-map-surface>
+        <svg class="relationship-edges" data-edge-layer role="group" aria-label="Connections"><defs><marker id="map-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="context-stroke"></path></marker></defs></svg>
+        <div class="relationship-groups" data-group-layer></div>
+        <div class="relationship-nodes" data-node-layer></div>
+      </div>
+      <div class="connection-hint" data-connection-hint hidden>Select the first Node</div>
+      <div class="map-empty" data-map-empty hidden><strong>No Nodes yet</strong><span>Right-click the canvas to add the first Node.</span></div>
+      <div class="relationship-minimap no-print"><svg viewBox="0 0 1600 1000" data-minimap></svg></div>
+    </div>
+    <div class="map-context-menu no-print" data-map-context-menu hidden>
+      <button type="button" data-context-create="node">+ Node</button>
+      <button type="button" data-context-create="group">+ Group</button>
+    </div>
+    <div class="entity-float-toolbar no-print" data-entity-toolbar hidden></div>
+    <div class="edge-float-toolbar no-print" data-edge-toolbar hidden>
+      <div class="edge-tool-popover" id="edge-line-style-menu" data-line-style-popover role="menu" aria-label="Line style" hidden>
+        <button type="button" role="menuitemradio" aria-checked="false" data-line-style="solid"><span class="line-sample solid"></span>Solid</button>
+        <button type="button" role="menuitemradio" aria-checked="false" data-line-style="dashed"><span class="line-sample dashed"></span>Dashed</button>
+      </div>
+      <div class="edge-tool-popover edge-arrow-popover" id="edge-arrow-menu" data-arrow-popover role="menu" aria-label="Arrow direction" hidden>
+        <button type="button" role="menuitemradio" aria-checked="false" data-arrow-direction="none"><span class="arrow-sample">—</span>No arrow</button>
+        <button type="button" role="menuitemradio" aria-checked="false" data-arrow-direction="forward"><span class="arrow-sample">&gt;</span>One-way</button>
+        <button type="button" role="menuitemradio" aria-checked="false" data-arrow-direction="bidirectional"><span class="arrow-sample">↔</span>Two-way</button>
+      </div>
+      <button type="button" class="edge-tool-button" data-line-style-toggle aria-label="Line style" aria-haspopup="menu" aria-expanded="false" aria-controls="edge-line-style-menu" title="Line style"><span class="line-sample solid" data-line-style-preview></span></button>
+      <button type="button" class="edge-tool-button" data-arrow-toggle aria-label="Arrow direction" aria-haspopup="menu" aria-expanded="false" aria-controls="edge-arrow-menu" title="Arrow direction">&gt;</button>
+    </div>
+    <div class="map-context-menu no-print" data-edge-context-menu hidden><button type="button" class="text-danger" data-delete-selected-edge>Delete connection</button></div>
+    <div class="group-draw-preview" data-group-draw-preview hidden></div>
+  </section>
+  {% else %}
+  <section class="panel map-first-empty"><strong>Create the first System Map</strong><p>Maps are independent canvases for systems, devices, software and ownership relationships.</p><button type="button" class="button primary" data-new-map>Create Map</button></section>
+  {% endif %}
+
+  <dialog class="relationship-dialog" data-map-dialog>
+    <form method="dialog" class="relationship-dialog-card" data-map-form>
+      <header><div><p class="eyebrow">SYSTEM MAP</p><h2 data-map-dialog-title>New Map</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></header>
+      <input type="hidden" name="action" value="create_map"><input type="hidden" name="map_id" value="{% if selected_map %}{{ selected_map.pk }}{% endif %}">
+      <label>Name<input name="name" maxlength="120" required></label><label>Description<textarea name="description" rows="3"></textarea></label>
+      <p class="dialog-error" data-dialog-error></p><footer>{% if user.is_admin %}<button type="button" class="button secondary text-danger" data-delete-map hidden>Move to Trash</button>{% endif %}<span class="dialog-footer-spacer" style="flex:1"></span><button type="button" class="button secondary" data-dialog-close>Cancel</button><button class="button primary" type="submit">Save Map</button></footer>
+    </form>
+  </dialog>
+
+  <dialog class="relationship-dialog" data-entity-dialog>
+    <form method="dialog" class="relationship-dialog-card" data-entity-form>
+      <header><div><p class="eyebrow">SYSTEM MAP</p><h2 data-entity-dialog-title>Edit</h2></div><button type="button" data-dialog-close aria-label="Close">×</button></header>
+      <input type="hidden" name="action"><input type="hidden" name="map_id" value="{{ selected_map.pk }}"><input type="hidden" name="node_id"><input type="hidden" name="group_id"><input type="hidden" name="x"><input type="hidden" name="y">
+      <div data-node-fields hidden>
+        <label>Name<input name="name" maxlength="160"></label>
+        <label>Description<textarea name="description" rows="3"></textarea></label>
+        <div class="dialog-grid"><label>Color<input type="color" name="color" value="#ffffff"></label><label>Group<select name="node_group_id"><option value="">No Group</option>{% for group in selected_map.groups.all %}<option value="{{ group.pk }}">{{ group.name }}</option>{% endfor %}</select></label></div>
+        <label>External URL<input type="url" name="external_url"></label>
+      </div>
+      <div data-group-fields hidden>
+        <div class="dialog-grid"><label>Name<input name="group_name" maxlength="120"></label><label>Color<input type="color" name="group_color" value="#eaf4ee"></label></div>
+        <input type="hidden" name="group_width"><input type="hidden" name="group_height"><input type="hidden" name="group_collapsed" value="false">
+      </div>
+      <p class="dialog-error" data-dialog-error></p><footer><span class="dialog-footer-spacer" style="flex:1"></span><button type="button" class="button secondary" data-dialog-close>Cancel</button><button class="button primary" type="submit">Save</button></footer>
+    </form>
+  </dialog>
+  {{ graph_data|json_script:"relationship-map-data" }}
+</div>
+{% endblock %}
+{% block scripts %}<script src="{% static 'core/relationship-map.js' %}?v=11"></script>{% endblock %}

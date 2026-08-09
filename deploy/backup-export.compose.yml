@@ -1,0 +1,21 @@
+# Enable with COMPOSE_FILE=docker-compose.yml:deploy/backup-export.compose.yml
+# The host folder MUST already exist (including a mounted NAS, if used).
+services:
+  backup:
+    environment:
+      BACKUP_EXPORT_ENABLED: "1"
+    volumes:
+      - type: bind
+        source: ${BACKUP_EXPORT_PATH:?Set BACKUP_EXPORT_PATH to existing secure storage}
+        target: /exports
+        bind:
+          create_host_path: false
+  restore:
+    environment:
+      BACKUP_EXPORT_ENABLED: "1"
+    volumes:
+      - type: bind
+        source: ${BACKUP_EXPORT_PATH:?Set BACKUP_EXPORT_PATH to existing secure storage}
+        target: /exports
+        bind:
+          create_host_path: false

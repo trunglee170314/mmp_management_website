@@ -1,0 +1,7 @@
+services:
+  backup:
+    volumes:
+      - type: volume
+        source: export_data
+        target: /exports
+        read_only: true

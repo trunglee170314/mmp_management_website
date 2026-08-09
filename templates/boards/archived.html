@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Archived Boards · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><p class="eyebrow">WORKSPACE / BOARDS</p><h1>Archived Boards</h1></div>
+  <a class="button secondary" href="{% url 'boards' %}">← Active Boards</a>
+</header>
+
+<form class="toolbar board-toolbar" method="get">
+  <label class="search-field"><span aria-hidden="true">⌕</span><input name="q" value="{{ query }}" placeholder="Search archived boards" aria-label="Search archived boards"></label>
+  <button class="button secondary board-search-button" type="submit">Search</button>
+  {% if query %}<a class="button secondary" href="{% url 'board_archive_list' %}">Clear</a>{% endif %}
+</form>
+
+<section class="panel table-panel">
+  <div class="table-scroll">
+    <table class="board-table archived-board-table">
+      <thead><tr><th>Board</th><th>Barcode</th><th>Components</th><th>Archived By</th><th>Archived At</th><th>Actions</th></tr></thead>
+      <tbody>
+        {% for board in boards %}
+        <tr>
+          <td><a class="strong-link" href="{% url 'board_history' board.pk %}">{{ board.name }}</a></td>
+          <td><code class="board-barcode">{{ board.barcode }}</code></td>
+          <td><div class="board-component-links">{% for component in board.components.all %}<a class="board-component-link" href="{{ component.link_url }}" target="_blank" rel="noopener"><span>{{ component.name }}</span> ↗</a>{% empty %}<span class="muted">No links</span>{% endfor %}</div></td>
+          <td>{{ board.updated_by|default:'System' }}</td>
+          <td>{{ board.updated_at|date:'d M Y, H:i' }}</td>
+          <td><div class="row-actions"><a href="{% url 'board_history' board.pk %}">History</a><form method="post" action="{% url 'board_restore' board.pk %}">{% csrf_token %}<button class="text-success" type="submit">Restore</button></form><form method="post" action="{% url 'board_purge' board.pk %}" data-confirm="Delete {{ board.name }} ({{ board.barcode }}) permanently? All Board components, Task links, assignments and Board history will be deleted. This cannot be undone.">{% csrf_token %}<button class="text-danger" type="submit">Delete Permanently</button></form></div></td>
+        </tr>
+        {% empty %}<tr><td colspan="6" class="empty">No archived Boards found.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% if page_obj.paginator.num_pages > 1 %}<nav class="pagination" aria-label="Archived Board pages">{% if page_obj.has_previous %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}<span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>{% if page_obj.has_next %}<a class="button secondary" href="?{{ pagination_query }}{% if pagination_query %}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>{% endif %}</nav>{% endif %}
+{% endblock %}
