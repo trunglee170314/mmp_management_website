@@ -1,0 +1,11 @@
+<div class="single-task-picker" data-single-task-picker data-empty-label="No task" data-options-label="Tasks">
+  <button id="milestone-task-picker-toggle" class="board-picker-toggle" type="button" aria-expanded="false" aria-controls="milestone-task-picker-options">
+    <span class="board-picker-value">No task</span><span class="board-picker-arrow" aria-hidden="true"></span>
+  </button>
+  <div id="milestone-task-picker-options" class="board-picker-options" hidden>
+    <label class="board-picker-search"><span aria-hidden="true">⌕</span><input type="search" data-single-task-search placeholder="Search tasks by any words" aria-label="Search tasks" autocomplete="off"></label>
+    <div class="single-task-options" data-single-task-options></div>
+    <span class="board-picker-empty board-picker-no-results" role="status" hidden>No matching tasks.</span>
+    {{ milestone_form.task }}
+  </div>
+</div>

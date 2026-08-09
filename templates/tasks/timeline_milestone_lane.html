@@ -1,0 +1,7 @@
+{% if lane_items %}<div class="timeline-marker-overlay {{ lane_class }}">
+  {% for milestone in lane_items %}
+    <button type="button" class="timeline-milestone {% if milestone.is_important %}is-important{% endif %}" data-milestone-id="{{ milestone.pk }}" data-date="{{ milestone.date|date:'Y-m-d' }}" data-revision="{{ milestone.updated_at|date:'c' }}" data-can-manage="{{ milestone.can_manage|yesno:'true,false' }}" style="grid-column:{{ milestone.left }};grid-row:{{ milestone.lane }};--milestone-color:{{ milestone.display_color }}" title="{{ milestone.name }} · {{ milestone.date|date:'d M Y' }} · {{ milestone.relative_label }}{% if milestone.visibility == 'private' %} · Private{% endif %}" aria-label="{% if milestone.is_important %}Important milestone: {% else %}Milestone: {% endif %}{{ milestone.name }}">
+      <span aria-hidden="true">{% if milestone.is_important %}★{% else %}⚑{% endif %}</span>{% if milestone.visibility == 'private' %}<small aria-label="Private">🔒</small>{% endif %}
+    </button>
+  {% endfor %}
+</div>{% endif %}

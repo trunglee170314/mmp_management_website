@@ -1,0 +1,3 @@
+[data-partial-root].is-partial-loading {
+  pointer-events: none;
+}

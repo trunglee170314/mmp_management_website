@@ -1,0 +1,222 @@
+.round-check,
+.meeting-page .round-check {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 2px solid #aebdb4;
+  border-radius: 50%;
+  background: #fff;
+  color: transparent;
+  font-size: 0;
+  line-height: 1;
+  box-shadow: 0 0 0 3px rgba(0, 92, 61, 0);
+  transition: border-color .15s ease, background-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+button.round-check {
+  cursor: pointer;
+}
+
+button.round-check:hover,
+.meeting-page button.round-check:hover {
+  border-color: #16835e;
+  background: #eef8f3;
+  box-shadow: 0 0 0 3px rgba(22, 131, 94, .12);
+  transform: scale(1.05);
+}
+
+button.round-check:focus-visible {
+  outline: 3px solid rgba(22, 131, 94, .24);
+  outline-offset: 2px;
+}
+
+.round-check.checked,
+.meeting-page .round-check.checked,
+.meeting-page button.round-check.checked:hover {
+  border-color: #087454;
+  background: #16835e;
+  box-shadow: 0 2px 6px rgba(8, 116, 84, .22);
+}
+
+.round-check.checked::after {
+  content: "";
+  width: 8px;
+  height: 4px;
+  margin-top: -2px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+}
+
+button.round-check:disabled {
+  cursor: wait;
+  opacity: .55;
+  transform: none;
+}
+
+.completed-row {
+  opacity: 1;
+}
+
+.completed-row strong,
+.completed-row .action-item-content {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.task-action-add-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px) 150px auto;
+  gap: 9px;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.task-action-add-form input,
+.task-action-add-form select,
+.task-action-edit-form input,
+.task-action-edit-form select {
+  min-width: 0;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: #fff;
+}
+
+.task-action-add-form [data-task-action-status] {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.task-action-row {
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.task-action-copy {
+  flex: 1;
+  min-width: 180px;
+}
+
+.task-action-controls {
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.task-action-controls button {
+  border: 0;
+  background: none;
+  color: var(--violet);
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.task-action-edit-form {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(150px, 220px) 150px auto auto;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 0 4px 28px;
+}
+
+.task-action-edit-form[hidden] {
+  display: none;
+}
+
+.task-action-edit-form [data-task-action-status] {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.cancelled-row {
+  opacity: .68;
+}
+
+.cancelled-row .task-action-copy strong {
+  text-decoration: line-through;
+}
+
+.task-description-panel {
+  margin-top: 18px;
+}
+
+.task-description-copy {
+  padding: 20px;
+  line-height: 1.65;
+  white-space: normal;
+}
+
+@media (max-width: 1100px) {
+  .task-action-add-form {
+    grid-template-columns: minmax(150px, 1fr) 140px auto;
+  }
+
+  .task-action-add-form input[name="new_action_item"] {
+    grid-column: 1 / -1;
+  }
+
+  .task-action-edit-form {
+    grid-template-columns: minmax(150px, 1fr) 140px auto auto;
+  }
+
+  .task-action-edit-form input[name="content"] {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .task-action-add-form,
+  .task-action-edit-form {
+    grid-template-columns: 1fr;
+  }
+
+  .task-action-add-form input[name="new_action_item"],
+  .task-action-edit-form input[name="content"] {
+    grid-column: auto;
+  }
+
+  .task-action-add-form .button,
+  .task-action-edit-form .button {
+    width: 100%;
+  }
+
+  .task-action-edit-form {
+    padding-left: 0;
+  }
+}
+
+.completed-row small {
+  color: #8a948e;
+}
+
+.action-items-table th:first-child,
+.action-items-table td:first-child {
+  width: 58px;
+  padding-right: 8px;
+  padding-left: 8px;
+  text-align: center;
+}
+
+.action-items-table td:first-child form {
+  display: inline-flex;
+  margin: 0;
+}
+
+[data-action-row] {
+  transition: opacity .17s ease;
+}
+
+[data-action-row].is-removing {
+  pointer-events: none;
+  opacity: 0;
+}

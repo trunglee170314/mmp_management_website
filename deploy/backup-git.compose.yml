@@ -1,0 +1,34 @@
+# Optional encrypted GitLab destination. No SSH keys are exposed to web/restore.
+services:
+  backup:
+    image: mmp-backup-tools:local
+    build:
+      context: .
+      dockerfile: deploy/backup.Dockerfile
+    environment:
+      BACKUP_GIT_ENABLED: "1"
+      BACKUP_GIT_REPO: ${BACKUP_GIT_REPO:?Set the separate SSH backup repository URL}
+      BACKUP_GIT_BRANCH: ${BACKUP_GIT_BRANCH:-main}
+      BACKUP_GIT_TIMEOUT_SECONDS: ${BACKUP_GIT_TIMEOUT_SECONDS:-120}
+    volumes:
+      - backup_git:/backup-git
+      - type: bind
+        source: ${BACKUP_GIT_SSH_KEY_PATH:?Set an existing dedicated private SSH key path}
+        target: /run/secrets/backup_ssh_key
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BACKUP_GIT_KNOWN_HOSTS_PATH:?Set an existing verified known_hosts file path}
+        target: /run/secrets/backup_known_hosts
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${BACKUP_AGE_RECIPIENTS_PATH:?Set an existing age public recipients file path}
+        target: /run/secrets/backup_age_recipients
+        read_only: true
+        bind:
+          create_host_path: false
+volumes:
+  backup_git:

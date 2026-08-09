@@ -1,0 +1,9 @@
+<form method="post" action="{% if task %}{% url 'task_edit' task.pk %}{% else %}{% url 'task_add' %}{% endif %}" class="stack-form task-form timeline-shared-task-form" data-shared-task-form>
+  {% csrf_token %}<input type="hidden" name="modal" value="1">
+  {% if task %}<input type="hidden" name="revision" value="{{ task.updated_at|date:'c' }}">{% endif %}
+  <header class="timeline-dialog-head"><h2>{{ title }}</h2><button type="button" data-dialog-close aria-label="Close">×</button></header>
+  {{ form.non_field_errors }}
+  <div class="shared-task-fields">{% include 'tasks/_form_fields.html' %}</div>
+  <p class="timeline-form-errors" data-form-error role="alert" hidden></p>
+  <footer class="form-actions"><button class="button secondary" type="button" data-dialog-close>Cancel</button><button class="button primary" type="submit">Save Task</button></footer>
+</form>

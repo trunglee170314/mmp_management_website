@@ -1,0 +1,36 @@
+{% extends page_base_template %}
+{% block title %}{{ relationship_map.name }} History · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div><p class="eyebrow">SYSTEM MAP / HISTORY</p><h1>{{ relationship_map.name }}</h1></div>
+  <div class="header-actions">
+    {% if not relationship_map.is_deleted %}<a class="button secondary" href="{% url 'relationship_map' %}?map={{ relationship_map.pk }}">Back to Map</a>{% endif %}
+    {% if user.is_admin %}<a class="button secondary" href="{% url 'relationship_map_trash' %}">Trash</a>{% endif %}
+  </div>
+</header>
+<section class="panel table-panel">
+  <div class="table-scroll">
+    <table>
+      <thead><tr><th>Saved At</th><th>Restore Point</th><th>User</th><th>Contents</th>{% if can_restore %}<th>Action</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for revision in revisions %}
+        <tr>
+          <td>{{ revision.created_at|date:"d M Y, H:i:s" }}</td>
+          <td><strong>{{ revision.action }}</strong></td>
+          <td>{{ revision.actor.display_name|default:revision.actor.username|default:"System" }}</td>
+          <td>{{ revision.snapshot.groups|length }} Groups · {{ revision.snapshot.nodes|length }} Nodes · {{ revision.snapshot.edges|length }} connections</td>
+          {% if can_restore %}<td><form method="post" action="{% url 'relationship_map_revision_restore' relationship_map.pk revision.pk %}" data-confirm="Restore this Map to the selected point? The current state will be saved first.">{% csrf_token %}<button class="button secondary mini">Restore</button></form></td>{% endif %}
+        </tr>
+        {% empty %}<tr><td colspan="{% if can_restore %}5{% else %}4{% endif %}" class="empty">No history has been recorded yet.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% if page_obj.paginator.num_pages > 1 %}
+  <nav class="pagination" aria-label="History pages">
+    {% if page_obj.has_previous %}<a class="button secondary mini" href="?page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}<a class="button secondary mini" href="?page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

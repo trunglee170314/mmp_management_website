@@ -1,0 +1,7 @@
+<fieldset class="timeline-color-palette">
+  <legend>Color</legend>
+  <input type="hidden" name="color" value="{{ initial_color }}">
+  <div class="timeline-color-swatches">
+    {% for color,label in palette %}<button type="button" class="timeline-color-swatch" data-admin-color="{{ color }}" style="--swatch-color:{{ color }}" aria-label="{{ label }}" aria-pressed="false"><span data-color-check></span></button>{% endfor %}
+  </div>
+</fieldset>
