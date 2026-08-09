@@ -1,0 +1,26 @@
+# Layer on tests/compose.yml. No real credentials, ports or production volumes.
+services:
+  git-server:
+    build:
+      context: ../..
+      dockerfile: deploy/tests/git-server.Dockerfile
+    volumes: [git_remote:/remote.git, git_secrets:/run/secrets]
+    healthcheck:
+      test: [CMD-SHELL, "test -s /run/secrets/backup_known_hosts && nc -z localhost 2222"]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+  backup:
+    image: mmp-backup-tools:local
+    pids_limit: 64
+    environment:
+      BACKUP_GIT_ENABLED: "1"
+      BACKUP_GIT_REPO: ssh://git@git-server:2222/remote.git
+      BACKUP_GIT_BRANCH: main
+      BACKUP_GIT_TIMEOUT_SECONDS: "15"
+    volumes: [git_work:/backup-git, git_secrets:/run/secrets:ro, decrypted:/output]
+volumes:
+  git_remote:
+  git_secrets:
+  git_work:
+  decrypted:

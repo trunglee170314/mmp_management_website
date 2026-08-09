@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header task-form-header">
+  <div><p class="eyebrow">TASKS / {% if task %}EDIT{% else %}NEW{% endif %}</p><h1>{{ title }}</h1></div>
+  {% if task %}<a class="button secondary" href="{% url 'task_history' task.pk %}?next={{ return_url|urlencode }}">View History</a>{% endif %}
+</header>
+<section class="panel form-panel task-form">
+  <form method="post" class="stack-form">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ return_url }}">
+    {% include 'tasks/_form_fields.html' %}
+    <div class="form-actions"><a class="button secondary" href="{{ return_url }}">Cancel</a><button class="button primary">Save Task</button></div>
+  </form>
+</section>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ board.name }} History · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">BOARDS / HISTORY</p>
+    <h1>{{ board.name }}</h1>
+    <p>Barcode: {{ board.barcode }}{% if board.is_archived %} · Archived{% endif %}</p>
+  </div>
+  <div class="header-actions">
+    <a class="button secondary back-button" href="{% if board.is_archived %}{% url 'board_archive_list' %}{% else %}{% url 'boards' %}{% endif %}">← Back to Boards</a>
+    {% if not board.is_archived %}<a class="button primary" href="{% url 'board_edit' board.pk %}?next={{ request.get_full_path|urlencode }}">Edit Board</a>{% endif %}
+    {% if board.is_archived and user.is_admin %}<form method="post" action="{% url 'board_restore' board.pk %}">{% csrf_token %}<button class="button primary" type="submit">Restore Board</button></form>{% endif %}
+  </div>
+</header>
+
+{% if board.components.exists %}
+<section class="panel board-detail-panel">
+  <div class="panel-head"><div><h2>Components</h2></div></div>
+  <div class="board-detail-components">{% for component in board.components.all %}<a class="board-component-link" href="{{ component.link_url }}" target="_blank" rel="noopener"><span>{{ component.name }}</span> ↗</a>{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if board.description %}
+<section class="panel task-description-panel board-description-panel">
+  <div class="panel-head"><div><h2>Description</h2></div></div>
+  <div class="task-description-copy">{{ board.description|linebreaksbr }}</div>
+</section>
+{% endif %}
+
+<section class="panel history-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Change History</h2>
+    </div>
+  </div>
+  <div class="timeline history-timeline">
+    {% for log in logs %}
+      <div class="timeline-item history-{{ log.change_kind }}">
+        <span></span>
+        <div>
+          <div class="history-event-heading">
+            <strong>{{ log.action }}</strong>
+            {% if log.change_kind == 'added' %}<span class="history-kind added">Added</span>{% endif %}
+            {% if log.change_kind == 'removed' %}<span class="history-kind removed">Removed</span>{% endif %}
+          </div>
+          {% for change in log.change_rows %}
+            <div class="history-field-diff">
+              <b>{{ change.label }}</b>
+              <div class="history-diff-values">
+                <span class="diff-value diff-removed"><i>−</i><span>{{ change.old|default:'Empty' }}</span></span>
+                <span class="diff-value diff-added"><i>+</i><span>{{ change.new|default:'Empty' }}</span></span>
+              </div>
+            </div>
+          {% endfor %}
+          <small>{{ log.actor|default:'System' }} · {{ log.created_at|date:'d M Y, H:i' }}</small>
+        </div>
+      </div>
+    {% empty %}
+      <div class="empty">No changes recorded.</div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

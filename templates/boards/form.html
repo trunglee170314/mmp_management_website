@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ title }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header"><div><p class="eyebrow">WORKSPACE / BOARDS</p><h1>{{ title }}</h1></div></header>
+<section class="panel form-panel board-form-panel">
+  <form method="post" class="stack-form board-form" data-board-form>
+    {% csrf_token %}
+    {% if return_url %}<input type="hidden" name="next" value="{{ return_url }}">{% endif %}
+    {% if board_revision %}<input type="hidden" name="revision" value="{{ board_revision }}">{% endif %}
+    {% if barcode_conflict %}<div class="notice board-barcode-conflict"><div><strong>{% if barcode_conflict.is_archived %}Archived Board found{% else %}Active Board found{% endif %}</strong><span>{{ barcode_conflict.name }} ({{ barcode_conflict.barcode }}) already uses this barcode.</span></div><a class="button secondary" href="{% url 'board_history' barcode_conflict.pk %}">View Board</a>{% if barcode_conflict.is_archived and user.is_admin %}<a class="button secondary" href="{% url 'board_archive_list' %}">Archived Boards</a>{% endif %}</div>{% endif %}
+    {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+    {% for field in form %}
+      <p class="field-{{ field.name }}">
+        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+        {{ field }}
+        {% if field.errors %}<span class="field-error">{{ field.errors|striptags }}</span>{% endif %}
+      </p>
+    {% endfor %}
+
+    <fieldset class="board-components-fieldset">
+      <legend>Components / Links</legend>
+      {{ component_formset.management_form }}
+      {% if component_formset.non_form_errors %}<div class="form-errors">{{ component_formset.non_form_errors }}</div>{% endif %}
+      <div class="board-component-list" data-component-list>
+        {% for component_form in component_formset %}
+          <div class="board-component-row" data-component-row>
+            {{ component_form.id }}
+            {{ component_form.DELETE.as_hidden }}
+            <div>
+              <label for="{{ component_form.name.id_for_label }}">Component name</label>
+              {{ component_form.name }}
+              {% if component_form.name.errors %}<span class="field-error">{{ component_form.name.errors|striptags }}</span>{% endif %}
+            </div>
+            <div>
+              <label for="{{ component_form.link_url.id_for_label }}">URL</label>
+              {{ component_form.link_url }}
+              {% if component_form.link_url.errors %}<span class="field-error">{{ component_form.link_url.errors|striptags }}</span>{% endif %}
+            </div>
+            <button type="button" class="button secondary text-danger board-component-remove" data-component-remove>Remove</button>
+          </div>
+        {% endfor %}
+      </div>
+      <button type="button" class="button secondary board-component-add" data-component-add>+ Add Component</button>
+    </fieldset>
+
+    <div class="form-actions"><a class="button secondary" href="{{ cancel_href }}">Cancel</a><button class="button primary">Save</button></div>
+  </form>
+</section>
+
+<template data-component-template>
+  <div class="board-component-row" data-component-row>
+    {{ component_formset.empty_form.id }}
+    {{ component_formset.empty_form.DELETE.as_hidden }}
+    <div><label for="{{ component_formset.empty_form.name.id_for_label }}">Component name</label>{{ component_formset.empty_form.name }}</div>
+    <div><label for="{{ component_formset.empty_form.link_url.id_for_label }}">URL</label>{{ component_formset.empty_form.link_url }}</div>
+    <button type="button" class="button secondary text-danger board-component-remove" data-component-remove>Remove</button>
+  </div>
+</template>
+{% endblock %}
+{% block scripts %}<script src="{% static 'core/board-management.js' %}?v=1"></script>{% endblock %}

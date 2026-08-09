@@ -1,0 +1,11 @@
+<div class="task-form meeting-task-modal-task-form">
+  <form method="post" action="{% url 'meeting_task_edit' meeting.pk entry.pk %}" class="meeting-task-modal-form stack-form" data-meeting-task-modal-form>
+    {% csrf_token %}
+    {% include 'tasks/_form_fields.html' %}
+    <div class="form-actions">
+      <button class="button secondary" type="button" data-meeting-task-modal-close>Cancel</button>
+      <button class="button primary" type="submit">Save Task</button>
+      <span data-meeting-task-modal-status role="status" aria-live="polite"></span>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Deactivate {{ target_user }} · MMP management{% endblock %}
+{% block content %}
+<header class="page-header">
+  <div>
+    <p class="eyebrow">WORKSPACE / USERS / DEACTIVATE</p>
+    <h1>Deactivate {{ target_user }}</h1>
+    <p>Current responsibilities must be transferred before this account is disabled.</p>
+  </div>
+</header>
+
+<section class="deactivation-layout">
+  <article class="panel responsibility-panel">
+    <div class="panel-head"><div><h2>Responsibilities to transfer</h2><p>Historical ownership and audit records will not be changed.</p></div></div>
+    <dl class="responsibility-counts">
+      <div><dt>Active tasks</dt><dd>{{ responsibility_counts.tasks }}</dd></div>
+      <div><dt>Open action items</dt><dd>{{ responsibility_counts.action_items }}</dd></div>
+      <div><dt>Active board assignments</dt><dd>{{ responsibility_counts.board_assignments }}</dd></div>
+      <div><dt>Draft meetings</dt><dd>{{ responsibility_counts.meetings }}</dd></div>
+      <div><dt>Minute writer rotations</dt><dd>{{ responsibility_counts.rotations }}</dd></div>
+    </dl>
+  </article>
+
+  <article class="panel form-panel deactivation-form-panel">
+    <form method="post" class="stack-form">
+      {% csrf_token %}
+      {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+      {{ form.as_p }}
+      <div class="notice deactivation-warning">
+        <strong>This action signs the user out.</strong>
+        <span>Finalized historical meetings, creator/completer fields, task history and audit identities remain unchanged.</span>
+      </div>
+      <div class="form-actions">
+        <a class="button secondary" href="{% url 'users' %}">Cancel</a>
+        <button class="button primary" type="submit">Transfer and Deactivate</button>
+      </div>
+    </form>
+  </article>
+</section>
+{% endblock %}

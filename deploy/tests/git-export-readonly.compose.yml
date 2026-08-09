@@ -1,0 +1,6 @@
+services:
+  backup:
+    environment:
+      BACKUP_EXPORT_ENABLED: "1"
+    volumes:
+      - export_data:/exports:ro
